@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **Layer 4: suggested hunts** (`iocflow[hunt]`). `iocflow.hunt.suggest(report)`
+  turns an enrichment report (or extracted entities) into ready-to-run hunt
+  queries — a `HuntPlan` of `Hunt`s, each with a `query`, `severity`, and
+  `rationale`.
+- Deterministic, offline core (no network, no keys): renders one IOC-sweep query
+  per indicator kind in three dialects — **CrowdStrike CQL**, **Cortex XQL**, and
+  **Sigma** (a complete rule with a content-derived, stable id). Values are
+  escaped and de-duplicated; benign-verdict indicators are skipped by default.
+  Each dialect renders only the kinds it has a real field for.
+- Optional LLM behavioral hunts: with a model configured (`IOCFLOW_LLM_*`, the
+  same config as Layer 3) `suggest()` additionally proposes TTP/anomaly-based
+  hunts. The LLM path is strictly additive — any model failure leaves the
+  deterministic plan intact, and `suggest()` never raises.
+- `Dialect` protocol + registry (`get_dialect`, `all_dialects`,
+  `DEFAULT_DIALECTS`) so new query languages drop in.
+- `Severity` now lives in the dependency-light core (`iocflow.severity`) and is
+  shared by Layers 3 and 4; `from iocflow.ai.models import Severity` is
+  unchanged. The deterministic hunt renderers are stdlib-only — `import
+  iocflow.hunt` pulls in neither `iocflow.ai` nor the LLM path.
+- `HuntPlan` is the serializable seam for Layer 5 (optional perimeter blocking).
+
 ## 0.3.0 (2026-05-30)
 - **Layer 3: AI commentary** (`iocflow[ai]`). `iocflow.ai.comment(report)` turns
   an enrichment report into a structured `Commentary` (`severity`, `assessment`,

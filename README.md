@@ -208,14 +208,62 @@ for action in note.recommendations:
 Bring any model by implementing the `CommentaryModel` protocol (`name` +
 `complete(system, user, *, json=False) -> str`).
 
+## Layer 4 — suggested hunts
+
+Turn the indicators into ready-to-run hunt queries for the platforms a SOC
+actually uses. The deterministic core runs offline — no network, no API keys:
+
+```bash
+pip install "iocflow[hunt]"   # only the optional LLM path needs the extra
+```
+
+```python
+from iocflow import extract
+from iocflow.enrich import enrich
+from iocflow.hunt import suggest
+
+entities = extract(report_text)
+report = enrich(entities)
+plan = suggest(report)                 # CrowdStrike CQL, Cortex XQL, Sigma
+
+print(plan.summary())
+# 9 hunts across 3 dialects
+
+for hunt in plan.for_dialect("sigma"):
+    print(f"# {hunt.title}  [{hunt.severity.value}]")
+    print(hunt.query)
+```
+
+For each indicator kind it renders one sweep query per dialect — CrowdStrike
+**CQL** (`in(RemoteAddressIP4, values=[...])`), Cortex **XQL**
+(`dataset = xdr_data | filter ...`), and a complete **Sigma** rule (with a
+stable, content-derived id). Values are escaped and de-duplicated; each dialect
+renders only the indicator kinds it has a real field for, and benign-verdict
+indicators are skipped by default (`include_benign=True` to keep them). Restrict
+output with `dialects=["sigma"]`.
+
+With a model configured (the same `IOCFLOW_LLM_*` env as Layer 3), `suggest()`
+also proposes **behavioral hunts** — TTP- and anomaly-based ideas that go beyond
+literal IOC matching:
+
+```python
+plan = suggest(report, entities=entities, commentary=note)
+behavioral = [h for h in plan.hunts if h.source == "llm"]
+```
+
+The LLM is strictly additive: with no model, or on any model error, you still
+get the full deterministic plan — `suggest()` never raises. Add a query language
+by implementing the `Dialect` protocol (`key`, `label`, `supports`, `render`).
+
 ## Where this is going
 
 iocflow grows in independently-useful layers, each behind its own pip extra.
-**Layer 1** (extraction), **Layer 2** (enrichment), and **Layer 3** (AI
-commentary) ship today; next are suggested hunts and optional perimeter
+**Layer 1** (extraction), **Layer 2** (enrichment), **Layer 3** (AI commentary),
+and **Layer 4** (suggested hunts) ship today; next is optional perimeter
 blocking. The pipeline is a clean hand-off chain of stable types:
 `ExtractedEntities` (L1) → `enrich()` → `EnrichmentReport` (L2) → `comment()` →
-`Commentary` (L3), each serializable for the next layer.
+`Commentary` (L3) → `suggest()` → `HuntPlan` (L4), each serializable for the
+next layer.
 
 ## License
 

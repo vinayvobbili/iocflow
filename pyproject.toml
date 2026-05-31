@@ -38,6 +38,9 @@ mitre = ["requests>=2.25"]
 enrich = ["requests>=2.25"]
 # Layer 3: AI commentary via any OpenAI-compatible chat endpoint.
 ai = ["requests>=2.25"]
+# Layer 4: suggested hunts. The deterministic renderers are stdlib-only; this
+# extra only covers the optional LLM behavioral-hunt path.
+hunt = ["requests>=2.25"]
 dev = [
     "requests>=2.25",
     "pytest>=7",

@@ -2,32 +2,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import List, Optional
 
+# Severity is a shared, dependency-light core type; re-exported here so the
+# Layer 3 public API (``from iocflow.ai.models import Severity``) is unchanged.
+from iocflow.severity import Severity
 
-class Severity(str, Enum):
-    """Analyst severity rating for a set of indicators."""
-
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
-
-    @property
-    def rank(self) -> int:
-        return {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}[self.value]
-
-    @classmethod
-    def coerce(cls, value, default: "Severity") -> "Severity":
-        """Parse a model-supplied severity string, falling back to ``default``."""
-        if isinstance(value, Severity):
-            return value
-        try:
-            return cls(str(value).strip().lower())
-        except (ValueError, AttributeError):
-            return default
+__all__ = ["Severity", "Commentary"]
 
 
 @dataclass
