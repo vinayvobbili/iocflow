@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 0.2.0 (2026-05-30)
 - **Layer 2: enrichment** (`iocflow[enrich]`). `enrich(entities)` looks every
   extracted indicator up against threat-intel sources and returns a normalized
   `EnrichmentReport` (worst-wins `MALICIOUS / SUSPICIOUS / BENIGN / UNKNOWN`
