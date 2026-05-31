@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.6.1 (2026-05-31)
 - **A real chat approval gate.** `SlackApprovalGate` wires the Layer 6
   human-in-the-loop seam to Slack: it posts the proposed blocks to a channel and
   polls for a reaction from an allowlisted approver (✅ approves the plan, ❌ or no
