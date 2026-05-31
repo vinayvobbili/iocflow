@@ -318,6 +318,10 @@ supervisor routes to specialist agents (extractor → enricher → hunter →
 responder) that use Layers 1–5 as tools. The LLM applies judgment; the
 deterministic layers do the exact work and are the fallback.
 
+![iocflow investigate() running the full lifecycle with a human-in-the-loop approval gate](docs/demo.gif)
+
+*(Run it yourself: [`examples/demo_investigate.py`](examples/demo_investigate.py).)*
+
 ```bash
 pip install "iocflow[agent]"      # Python 3.10+ (LangGraph / LangChain)
 ```
@@ -350,9 +354,25 @@ case = investigate(report_text, gate=CLIApprovalGate())   # prompts before block
 ```
 
 `AutoApproveGate` (dev/CI) and `CLIApprovalGate` (plan-level or per-action) ship
-in the box; implement the `ApprovalGate` protocol to wire your own channel
-(Slack/Teams/XSOAR/web). The lifecycle is also exposed as LangChain tools
-(`IOCFLOW_TOOLS`) for your own agents.
+in the box, and so does a real chat gate — **`SlackApprovalGate`** posts the
+proposed blocks to a channel and waits for an allowlisted approver to react,
+defaulting to *deny* on timeout (no inbound webhook server required):
+
+```python
+from iocflow.agent import investigate
+from iocflow.agent.chat_gate import SlackApprovalGate
+
+# SLACK_BOT_TOKEN + SLACK_APPROVAL_CHANNEL from the env; only these users count
+gate = SlackApprovalGate(approvers=["U_ANALYST"], timeout=600)
+case = investigate(report_text, gate=gate)   # ✅ to authorize, ❌ or no reply = denied
+```
+
+`ChatApprovalGate` + a two-method `ChatTransport` (`post`, `reactions`) make the
+same flow portable to Webex, Teams, or anything else — implement the
+`ApprovalGate` protocol to wire any channel you like. The threat-intel sources
+(`enrichers=`) and block targets (`blockers=`) are equally pluggable, so the
+agent runs fully offline in tests. The lifecycle is also exposed as LangChain
+tools (`IOCFLOW_TOOLS`) for your own agents.
 
 ## Where this is going
 

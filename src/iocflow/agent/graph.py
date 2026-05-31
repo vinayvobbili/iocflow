@@ -22,8 +22,9 @@ from iocflow.agent.nodes import (
 from iocflow.agent.state import Case, CaseFile
 
 
-def build_graph(model=None, gate: Optional[ApprovalGate] = None, blockers=None):
-    """Build and compile the investigation graph, binding the model/gate/blockers."""
+def build_graph(model=None, gate: Optional[ApprovalGate] = None, blockers=None,
+                enrichers=None):
+    """Build and compile the investigation graph, binding model/gate/blockers/enrichers."""
     from langgraph.graph import END, START, StateGraph
 
     gate = gate or DenyAllGate()
@@ -31,7 +32,7 @@ def build_graph(model=None, gate: Optional[ApprovalGate] = None, blockers=None):
 
     g.add_node("supervisor", partial(supervisor_node, model=model))
     g.add_node("extractor", partial(extractor_node, model=model))
-    g.add_node("enricher", partial(enricher_node, model=model))
+    g.add_node("enricher", partial(enricher_node, model=model, enrichers=enrichers))
     g.add_node("hunter", partial(hunter_node, model=model))
     g.add_node("responder", partial(responder_node, model=model, gate=gate, blockers=blockers))
 
@@ -54,6 +55,7 @@ def investigate(
     model=None,
     gate: Optional[ApprovalGate] = None,
     blockers=None,
+    enrichers=None,
     recursion_limit: int = 25,
 ) -> Case:
     """Investigate a report end to end and return a :class:`Case`.
@@ -69,13 +71,14 @@ def investigate(
             (built from the environment); ``None`` runs the graph deterministically.
         gate: The HITL :class:`ApprovalGate`. Defaults to ``DenyAllGate``.
         blockers: Block targets for the responder (defaults to env-configured).
+        enrichers: Threat-intel sources for the enricher (defaults to env-configured).
         recursion_limit: LangGraph step budget (supervisor + 4 specialists).
     """
     if model is None:
         from iocflow.agent.model import default_agent_model
         model = default_agent_model()
 
-    graph = build_graph(model=model, gate=gate, blockers=blockers)
+    graph = build_graph(model=model, gate=gate, blockers=blockers, enrichers=enrichers)
     final = graph.invoke(
         {"text": text, "trace": [], "visited": []},
         config={"recursion_limit": recursion_limit},

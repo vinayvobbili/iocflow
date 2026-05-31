@@ -1,6 +1,19 @@
 # Changelog
 
 ## Unreleased
+- **A real chat approval gate.** `SlackApprovalGate` wires the Layer 6
+  human-in-the-loop seam to Slack: it posts the proposed blocks to a channel and
+  polls for a reaction from an allowlisted approver (✅ approves the plan, ❌ or no
+  reply within the timeout denies it) — no inbound webhook server needed. The
+  underlying `ChatApprovalGate` + two-method `ChatTransport` (`post`,
+  `reactions`) make the same flow portable to Webex/Teams/etc. A timeout defaults
+  to deny, and the Layer 5 allowlist guard still vetoes underneath.
+- **Pluggable enrichers in the agent.** `investigate(...)` / `build_graph(...)`
+  now take `enrichers=` alongside `blockers=`, so the threat-intel sources are
+  injectable (and the whole agent runs offline in tests/demos).
+- **Demo.** `examples/demo_investigate.py` runs the full lifecycle with the CLI
+  approval gate against a sample report (nothing real is touched); `docs/demo.gif`
+  records it for the README.
 
 ## 0.6.0 (2026-05-31)
 - **Layer 6: the agentic capstone** (`iocflow[agent]`). `iocflow.agent.investigate(text)`

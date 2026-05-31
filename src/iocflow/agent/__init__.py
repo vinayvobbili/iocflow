@@ -27,6 +27,12 @@ The model is any LangChain chat model; :func:`default_agent_model` builds a
 
 Needs the extra: ``pip install "iocflow[agent]"``.
 """
+from iocflow.agent.chat_gate import (
+    ChatApprovalGate,
+    ChatTransport,
+    SlackApprovalGate,
+    SlackTransport,
+)
 from iocflow.agent.gate import (
     ApprovalDecision,
     ApprovalGate,
@@ -56,4 +62,9 @@ __all__ = [
     "DenyAllGate",
     "AutoApproveGate",
     "CLIApprovalGate",
+    # chat-driven HITL (Slack reference adapter)
+    "ChatApprovalGate",
+    "ChatTransport",
+    "SlackApprovalGate",
+    "SlackTransport",
 ]

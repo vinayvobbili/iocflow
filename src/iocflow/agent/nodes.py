@@ -78,14 +78,14 @@ def extractor_node(state: CaseFile, *, model=None) -> dict:
             "trace": [f"extractor: {entities.summary()}"]}
 
 
-def enricher_node(state: CaseFile, *, model=None) -> dict:
+def enricher_node(state: CaseFile, *, model=None, enrichers=None) -> dict:
     from iocflow.ai import comment
     from iocflow.enrich import enrich
 
     entities = state.get("entities")
     if entities is None:
         return {"visited": ["enricher"], "trace": ["enricher: no entities; skipped"]}
-    report = enrich(entities)  # uses configured sources; empty if none
+    report = enrich(entities, enrichers)  # given/env sources; empty if none
     note = comment(report, entities=entities, text=state.get("text"))
     return {"enrichment": report, "commentary": note, "visited": ["enricher"],
             "trace": [f"enricher: {report.summary()}; severity={note.severity.value}"]}
