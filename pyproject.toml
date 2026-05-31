@@ -44,6 +44,10 @@ hunt = ["requests>=2.25"]
 # Layer 5: response / blocking (PAN-OS, Zscaler, CrowdStrike, Abnormal). The
 # EDL-feed target is stdlib-only; this extra covers the live HTTP targets.
 block = ["requests>=2.25"]
+# Ingestion: poll feeds (GitHub advisories, RSS/Atom, watched dirs) and trigger
+# the lifecycle. The SQLite seen-store + file source are stdlib-only; requests
+# covers the advisory API and feedparser the RSS/Atom path.
+sources = ["requests>=2.25", "feedparser>=6.0"]
 # Layer 6: the agentic capstone — a LangGraph multi-agent team over L1–L5, with
 # m1→s1-style failover via langchain-failover and a human-in-the-loop gate.
 # LangGraph/LangChain require Python >=3.10; the rest of iocflow still runs on 3.9.
@@ -56,6 +60,7 @@ agent = [
 ]
 dev = [
     "requests>=2.25",
+    "feedparser>=6.0",
     "pytest>=7",
     "ruff>=0.4",
     "build>=1.0",

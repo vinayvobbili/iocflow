@@ -1,6 +1,28 @@
 # Changelog
 
 ## Unreleased
+- **Ingestion / triggers** (`iocflow[sources]`). A `Source` polls a feed and
+  yields `Trigger` work items; a `Poller` de-duplicates them against a
+  `SeenStore` and runs a handler — by default the deterministic extract → enrich
+  → comment → suggest lifecycle, returning a `TriageResult`. It turns iocflow
+  from "paste text + click" into something a feed can drive, the same shape as a
+  critical-advisory poller.
+- Reference sources: `GitHubAdvisorySource` (GitHub Security Advisories, severity
+  / ecosystem filters), `RssSource` (any RSS/Atom feed; accepts a raw string for
+  offline use), and `FileSource` (a watched directory). `default_sources()`
+  builds them from the environment (`IOCFLOW_GITHUB_ADVISORIES`,
+  `IOCFLOW_RSS_FEEDS`, `IOCFLOW_FILE_SOURCE_DIR`).
+- `SeenStore` de-dup with a stdlib `SqliteSeenStore` (durable across restarts)
+  and a `MemorySeenStore`. The `Poller` is resilient — one failing source or
+  handler never sinks the batch, and a failed handler leaves its trigger unmarked
+  so the next poll retries it (`mark_on_error=` to opt out).
+- Scheduling stays out of the library: `run_once()` for cron / a systemd timer,
+  or `run_forever(interval)`. A poller **never blocks** — analysis and proposals
+  only; destructive action still goes through the Layer 6 approval gate. Wire the
+  full loop with `handler=lambda t: investigate(t.text, gate=...)`.
+- Lazy and isolated: `import iocflow` doesn't load `sources`, and importing
+  `iocflow.sources` doesn't pull `feedparser` until `RssSource.poll()`. New
+  `examples/poller_advisories.py`.
 
 ## 0.6.1 (2026-05-31)
 - **A real chat approval gate.** `SlackApprovalGate` wires the Layer 6

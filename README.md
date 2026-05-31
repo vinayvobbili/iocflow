@@ -374,6 +374,42 @@ same flow portable to Webex, Teams, or anything else — implement the
 agent runs fully offline in tests. The lifecycle is also exposed as LangChain
 tools (`IOCFLOW_TOOLS`) for your own agents.
 
+## Sources — trigger the lifecycle automatically
+
+Everything above starts from text you hand in. Sources answer the other half:
+*where does that text come from?* A `Source` polls a feed and yields `Trigger`
+work items; a `Poller` de-duplicates them against a `SeenStore` and runs a
+handler — by default the deterministic extract → enrich → comment → suggest
+lifecycle. It's the same shape as a real critical-advisory poller, as a library.
+
+```bash
+pip install "iocflow[sources]"
+```
+
+```python
+from iocflow.sources import Poller, SqliteSeenStore, GitHubAdvisorySource
+
+poller = Poller(
+    [GitHubAdvisorySource(severities=["critical"])],
+    store=SqliteSeenStore("advisories.sqlite"),   # durable: survives restarts
+)
+for result in poller.run_once():                  # call from cron / a systemd timer
+    print(result.output.summary())
+```
+
+Reference sources ship for **GitHub Security Advisories**, any **RSS/Atom** feed
+(vendor advisories, threat blogs), and a **watched directory** of files;
+`default_sources()` builds them from the environment. Scheduling stays yours —
+the library offers `run_once()` and a simple `run_forever(interval)`, so it drops
+behind your own cron or systemd timer.
+
+Crucially, **a poller never blocks anything**: the default handler only analyzes
+and (with the agent layer) *proposes*. To close the loop, hand the trigger to
+`investigate()` with an approval gate — feed → investigate → propose → a human
+approves in Slack — so automation does the toil and a person still holds the
+trigger on anything destructive. See
+[`examples/poller_advisories.py`](examples/poller_advisories.py).
+
 ## Where this is going
 
 iocflow grows in independently-useful layers, each behind its own pip extra.
