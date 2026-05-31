@@ -26,13 +26,44 @@ logger = logging.getLogger(__name__)
 Handler = Callable[[Trigger], object]
 
 
+_KIND_FIELD = {
+    "ip": "ips", "domain": "domains", "url": "urls", "email": "emails",
+    "filename": "filenames", "cve": "cves", "mitre_technique": "mitre_techniques",
+    "threat_actor": "threat_actors", "malware_family": "malware_families",
+}
+
+
+def _merge_indicators(entities, indicators) -> None:
+    """Fold a trigger's pre-parsed (kind, value) indicators into the entities.
+
+    Structured feeds (STIX/TAXII) carry indicators directly; without this they'd
+    be lost because the text is only a pattern, not prose to extract from.
+    """
+    for kind, value in indicators or []:
+        if not value:
+            continue
+        if kind in ("md5", "sha1", "sha256"):
+            bucket = entities.hashes.setdefault(kind, [])
+            if value not in bucket:
+                bucket.append(value)
+        elif kind in _KIND_FIELD:
+            field = getattr(entities, _KIND_FIELD[kind])
+            if value not in field:
+                field.append(value)
+
+
 def default_handler(trigger: Trigger) -> TriageResult:
-    """Run the deterministic IOC lifecycle over a trigger's text. Never raises."""
+    """Run the deterministic IOC lifecycle over a trigger. Never raises.
+
+    Extracts from the trigger's text and merges any pre-parsed structured
+    indicators it carries (e.g. from a STIX/TAXII source).
+    """
     from iocflow import extract
 
     text = trigger.text or ""
     try:
         entities = extract(text)
+        _merge_indicators(entities, trigger.indicators)
     except Exception as exc:  # noqa: BLE001 — extraction should not kill the poll
         logger.warning("extract failed for %s (%s)", trigger.key, exc)
         return TriageResult(trigger=trigger, error=f"extract: {exc}")

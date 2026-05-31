@@ -48,6 +48,9 @@ block = ["requests>=2.25"]
 # the lifecycle. The SQLite seen-store + file source are stdlib-only; requests
 # covers the advisory API and feedparser the RSS/Atom path.
 sources = ["requests>=2.25", "feedparser>=6.0"]
+# STIX 2.1 interop. from_stix/to_stix are stdlib-only; requests covers the
+# TaxiiSource (a TAXII 2.1 collection as an ingestion source).
+stix = ["requests>=2.25"]
 # Layer 6: the agentic capstone — a LangGraph multi-agent team over L1–L5, with
 # m1→s1-style failover via langchain-failover and a human-in-the-loop gate.
 # LangGraph/LangChain require Python >=3.10; the rest of iocflow still runs on 3.9.

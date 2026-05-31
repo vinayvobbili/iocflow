@@ -157,6 +157,18 @@ def test_default_handler_empty_text_is_safe():
     assert res.error is None and res.entities is not None
 
 
+def test_default_handler_merges_structured_indicators():
+    # A structured trigger (e.g. STIX) carries indicators directly; the handler
+    # must fold them in even when the text alone wouldn't yield them.
+    t = Trigger(source="taxii", id="1", text="[domain-name:value = 'evil.test']",
+                indicators=[("domain", "evil.test"), ("sha256", "a" * 64),
+                            ("cve", "CVE-2021-44228")])
+    res = default_handler(t)
+    assert "evil.test" in res.entities.domains
+    assert "a" * 64 in res.entities.hashes["sha256"]
+    assert "CVE-2021-44228" in res.entities.cves
+
+
 # ------------------------------ RSS -------------------------------
 
 RSS = """<?xml version="1.0"?>

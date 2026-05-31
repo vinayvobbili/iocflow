@@ -410,6 +410,44 @@ approves in Slack — so automation does the toil and a person still holds the
 trigger on anything destructive. See
 [`examples/poller_advisories.py`](examples/poller_advisories.py).
 
+## STIX interop — the threat-intel lingua franca
+
+iocflow speaks STIX 2.1 both ways, so it drops into an existing TIP / TAXII
+pipeline rather than living on an island.
+
+```bash
+pip install "iocflow[stix]"
+```
+
+```python
+from iocflow.stix import from_stix, to_stix
+
+entities = from_stix(bundle)          # STIX bundle/objects/JSON → extracted indicators
+out = to_stix(enrichment_report)      # any iocflow result → a conformant STIX 2.1 bundle
+```
+
+`from_stix` walks observable objects *and* indicator patterns and is resilient to
+the messy bundles real feeds emit (a bad object is skipped, never fatal).
+`to_stix` accepts entities, an `EnrichmentReport` (verdicts become
+`indicator_types` / `confidence`), a `Case`, or plain `(kind, value)` pairs, and
+gives every object a **deterministic id** (UUIDv5 over the indicator) so bundles
+are reproducible and idempotent to re-ingest. Both are stdlib-only.
+
+A **TAXII 2.1** collection is also an ingestion source — it plugs straight into
+the poller from the previous section:
+
+```python
+from iocflow.stix import TaxiiSource
+from iocflow.sources import Poller, SqliteSeenStore
+
+poller = Poller(
+    [TaxiiSource(api_root, collection_id, token="…")],
+    store=SqliteSeenStore("taxii.sqlite"),
+)
+```
+
+See [`examples/stix_interop.py`](examples/stix_interop.py).
+
 ## Where this is going
 
 iocflow grows in independently-useful layers, each behind its own pip extra.

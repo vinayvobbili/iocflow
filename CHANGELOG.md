@@ -1,6 +1,21 @@
 # Changelog
 
 ## Unreleased
+- **STIX 2.1 interop** (`iocflow[stix]`). `from_stix(bundle)` parses a STIX
+  bundle / object(s) / JSON string into `ExtractedEntities` — walking both
+  observable objects (SCOs) and indicator patterns, and resilient to the messy
+  bundles real feeds emit (a malformed object is skipped, never fatal).
+  `to_stix(source)` emits a conformant STIX 2.1 `bundle` from any iocflow result
+  (`ExtractedEntities`, an `EnrichmentReport` whose verdicts become
+  `indicator_types` / `confidence`, a `Case`, or plain `(kind, value)` pairs).
+- Object ids are **deterministic** (UUIDv5 over the indicator), so re-emitting an
+  indicator yields the same id — bundles are reproducible and idempotent to
+  ingest. `from_stix`/`to_stix` are stdlib-only.
+- **`TaxiiSource`** makes a TAXII 2.1 collection an ingestion source that plugs
+  straight into the `Poller` (de-dup keyed on STIX object id). Its pre-parsed
+  indicators flow through the lifecycle even when the trigger text is only a
+  pattern — the default handler now merges a trigger's structured indicators with
+  what it extracts from text. New `examples/stix_interop.py`.
 
 ## 0.7.0 (2026-05-31)
 - **Ingestion / triggers** (`iocflow[sources]`). A `Source` polls a feed and
