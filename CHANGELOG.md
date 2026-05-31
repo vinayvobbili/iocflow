@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 0.5.0 (2026-05-31)
 - **Layer 5: response / blocking** (`iocflow[block]`). `iocflow.block.block(report)`
   takes the indicators an enrichment report flagged malicious and blocks them at
   the control points you operate, returning a `BlockReport` of per-target
