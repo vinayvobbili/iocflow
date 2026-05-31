@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "iocflow"
+version = "0.1.0"
+description = "Extract threat indicators (IOCs) from unstructured text — IPs, domains, URLs, hashes, CVEs, MITRE techniques, threat actors, and malware families. Layer 1 of an IOC-lifecycle toolkit."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Vinay Vobbilichetty", email = "vinayvobbilichetty11@gmail.com" }]
+keywords = [
+    "ioc", "indicators-of-compromise", "threat-intelligence", "cybersecurity",
+    "extraction", "mitre-attack", "cve", "threat-actor", "malware", "dfir",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "tldextract>=3.4",
+]
+
+[project.optional-dependencies]
+# Bundled MITRE ATT&CK malware-name provider (fetches the public STIX bundle).
+mitre = ["requests>=2.25"]
+dev = [
+    "requests>=2.25",
+    "pytest>=7",
+    "ruff>=0.4",
+    "build>=1.0",
+    "twine>=5.0",
+]
+
+[project.scripts]
+iocflow = "iocflow.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/vinayvobbili/iocflow"
+Repository = "https://github.com/vinayvobbili/iocflow"
+Issues = "https://github.com/vinayvobbili/iocflow/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/iocflow"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"

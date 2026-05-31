@@ -1,0 +1,20 @@
+# Changelog
+
+## Unreleased
+
+## 0.1.0 (2026-05-30)
+
+- Initial release — Layer 1: threat-entity extraction.
+- `extract(text)` pulls IPs, domains, URLs, filenames, hashes (MD5/SHA1/SHA256),
+  CVEs, emails, MITRE technique IDs, threat actors, and malware families from
+  unstructured text.
+- `refang_text` re-fangs defanged IOCs (`[.]`, `[at]`, `hxxp`, …) before extraction.
+- Domain validation via `tldextract` (Mozilla Public Suffix List); broad
+  benign-domain / benign-IP allowlists; three-layer malware false-positive defense.
+- Pluggable enrichment sources: `MalwareNames` and `ActorAliases` — supply your
+  own name sets; the core has no external-data dependency and works fully without them.
+- Optional `iocflow[mitre]` extra: `mitre.mitre_malware_names()` fetches the public
+  MITRE ATT&CK STIX bundle and returns a ready-made `MalwareNames` (7-day disk cache).
+- `ExtractedEntities.iter_indicators()` yields flat `(kind, value)` indicators —
+  the input surface for future enrichment layers.
+- `iocflow` CLI / `python -m iocflow` with `--json`, `--no-refang`, `--mitre`.
