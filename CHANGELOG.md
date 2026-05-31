@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.7.0 (2026-05-31)
 - **Ingestion / triggers** (`iocflow[sources]`). A `Source` polls a feed and
   yields `Trigger` work items; a `Poller` de-duplicates them against a
   `SeenStore` and runs a handler — by default the deterministic extract → enrich
