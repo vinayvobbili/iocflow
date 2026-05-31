@@ -113,14 +113,66 @@ echo "report text…" | iocflow --json
 iocflow --mitre "Emotet dropped Cobalt Strike"     # needs iocflow[mitre]
 ```
 
+## Layer 2 — enrichment
+
+Take the extracted entities and look every indicator up against threat-intel
+sources, getting back a normalized verdict per indicator. Install the extra and
+set the API keys you have:
+
+```bash
+pip install "iocflow[enrich]"
+export IOCFLOW_VT_API_KEY=...          # VirusTotal      (free key)
+export IOCFLOW_ABUSEIPDB_API_KEY=...   # AbuseIPDB       (free key)
+export IOCFLOW_ABUSECH_API_KEY=...     # abuse.ch        (free Auth-Key)
+```
+
+```python
+from iocflow import extract
+from iocflow.enrich import enrich
+
+entities = extract(report_text)
+report = enrich(entities)              # uses every source whose key is set
+
+print(report.summary())
+# 5 indicators across 3 sources, 2 malicious, 1 suspicious
+
+for ind in report.malicious:
+    print("malicious:", ind.kind, ind.value, "→", report.verdict_for(ind.kind, ind.value).value)
+```
+
+Each indicator is routed only to the sources that handle its kind (VirusTotal:
+IPs/domains/URLs/hashes; AbuseIPDB: IPs; abuse.ch: IPs/domains/URLs/hashes via
+ThreatFox/URLhaus/MalwareBazaar). Lookups fan out over a thread pool. A source
+with no key is skipped, and a failing lookup becomes an error record rather than
+crashing the batch — so partial coverage still produces a report.
+
+Verdicts are normalized to `MALICIOUS / SUSPICIOUS / BENIGN / UNKNOWN` and
+aggregated worst-wins across sources. You can also pass enrichers explicitly,
+restrict to certain `kinds`, or supply a cache:
+
+```python
+from iocflow.enrich import enrich, VirusTotalEnricher, MemoryCache
+
+report = enrich(
+    entities,
+    [VirusTotalEnricher("my-key")],
+    kinds={"ip", "domain"},
+    cache=MemoryCache(),
+)
+```
+
+Bring your own source by implementing the `Enricher` protocol (`name`,
+`supports(kind)`, `enrich(kind, value) -> EnrichmentRecord`) — or subclass
+`HTTPEnricher` to get session handling, rate-limiting, and error-wrapping for
+free.
+
 ## Where this is going
 
-iocflow is **Layer 1** of an IOC-lifecycle toolkit. The plan is to grow it in
-independently-useful layers, each behind its own pip extra: enrichment
-(VirusTotal, Recorded Future, AbuseIPDB, Shodan, abuse.ch), AI commentary,
-suggested hunts, and optional perimeter blocking — each configured by plugging
-in your own API keys. `ExtractedEntities` (and its `iter_indicators()` view) is
-the stable hand-off type those layers consume.
+iocflow grows in independently-useful layers, each behind its own pip extra.
+**Layer 1** (extraction) and **Layer 2** (enrichment) ship today; next are AI
+commentary, suggested hunts, and optional perimeter blocking. The pipeline is a
+clean hand-off chain of stable types: `ExtractedEntities` (L1) feeds `enrich()`,
+which returns an `EnrichmentReport` (L2) that later layers consume.
 
 ## License
 

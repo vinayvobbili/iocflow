@@ -34,6 +34,8 @@ dependencies = [
 [project.optional-dependencies]
 # Bundled MITRE ATT&CK malware-name provider (fetches the public STIX bundle).
 mitre = ["requests>=2.25"]
+# Layer 2: enrichment against threat-intel sources (VirusTotal, AbuseIPDB, abuse.ch).
+enrich = ["requests>=2.25"]
 dev = [
     "requests>=2.25",
     "pytest>=7",

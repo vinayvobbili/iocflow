@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- **Layer 2: enrichment** (`iocflow[enrich]`). `enrich(entities)` looks every
+  extracted indicator up against threat-intel sources and returns a normalized
+  `EnrichmentReport` (worst-wins `MALICIOUS / SUSPICIOUS / BENIGN / UNKNOWN`
+  verdict per indicator).
+- Free-tier sources: `VirusTotalEnricher` (IPs/domains/URLs/hashes),
+  `AbuseIPDBEnricher` (IPs), `AbuseChEnricher` (ThreatFox/URLhaus/MalwareBazaar).
+- `default_enrichers()` builds every source whose API key is present in the
+  environment (`IOCFLOW_VT_API_KEY`, `IOCFLOW_ABUSEIPDB_API_KEY`,
+  `IOCFLOW_ABUSECH_API_KEY`); missing keys are skipped, not errors.
+- Sync thread-pool fan-out; indicators routed to sources by kind. Failing
+  lookups become error records instead of crashing the batch.
+- `Enricher` protocol + `HTTPEnricher` base (session, per-source rate-limiting,
+  error-wrapping) for custom sources; optional `Cache` seam with `MemoryCache`.
+- Core install stays dependency-light: enrichment is not imported unless you
+  `import iocflow.enrich`.
+
 ## 0.1.0 (2026-05-30)
 
 - Initial release — Layer 1: threat-entity extraction.
