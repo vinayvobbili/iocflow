@@ -33,7 +33,7 @@ from iocflow.models import ExtractedEntities, Indicator, ThreatActor
 from iocflow.providers import ActorAliases, MalwareNames
 from iocflow.refang import refang_text
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     # Orchestrator

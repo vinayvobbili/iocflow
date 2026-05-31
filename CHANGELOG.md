@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 0.6.0 (2026-05-31)
 - **Layer 6: the agentic capstone** (`iocflow[agent]`). `iocflow.agent.investigate(text)`
   drives the whole IOC lifecycle as a small multi-agent team (LangGraph): a
   supervisor routes to specialist agents — extractor, enricher, hunter,
