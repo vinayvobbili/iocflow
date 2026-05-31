@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.8.0 (2026-05-31)
 - **STIX 2.1 interop** (`iocflow[stix]`). `from_stix(bundle)` parses a STIX
   bundle / object(s) / JSON string into `ExtractedEntities` — walking both
   observable objects (SCOs) and indicator patterns, and resilient to the messy
