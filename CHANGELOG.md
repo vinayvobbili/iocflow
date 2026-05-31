@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 0.3.0 (2026-05-30)
 - **Layer 3: AI commentary** (`iocflow[ai]`). `iocflow.ai.comment(report)` turns
   an enrichment report into a structured `Commentary` (`severity`, `assessment`,
   `key_findings`, `recommendations`).
