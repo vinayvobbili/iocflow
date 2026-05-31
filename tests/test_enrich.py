@@ -187,6 +187,31 @@ def test_lookup_http_error_becomes_error_record():
     assert "500" in rec.error
 
 
+@pytest.mark.parametrize("cls", [VirusTotalEnricher, AbuseIPDBEnricher, AbuseChEnricher])
+def test_missing_key_fails_gracefully_without_network(cls):
+    session = FakeSession(get=FakeResponse({}), post=FakeResponse({}))
+    for key in (None, ""):
+        en = cls(key, session=session)
+        rec = en.enrich("ip", "1.2.3.4")
+        assert not rec.ok
+        assert "no API key configured" in rec.error
+        assert rec.verdict is Verdict.UNKNOWN
+    # short-circuited before any HTTP call
+    assert session.calls == []
+
+
+def test_missing_key_enricher_does_not_break_batch():
+    # A keyless source produces only error records; the batch still completes
+    # and a working source's verdict still lands.
+    entities = extract("c2 at 185.220.101.5")
+    keyless = VirusTotalEnricher(None, session=FakeSession(get=FakeResponse({})))
+    working = StubEnricher("works", ["ip"], verdict=Verdict.MALICIOUS)
+    report = enrich(entities, [keyless, working])
+    assert report.verdict_for("ip", "185.220.101.5") is Verdict.MALICIOUS
+    assert len(report.errors) == 1
+    assert "no API key configured" in report.errors[0].error
+
+
 # ----------------------------- orchestrator -----------------------
 
 class StubEnricher:

@@ -35,6 +35,7 @@ class HTTPEnricher:
 
     name: str = ""
     supported_kinds: Set[str] = frozenset()
+    requires_key: bool = True  # most sources need an API key; skip the call without one
     min_interval: float = 0.0  # seconds between calls (per instance); 0 = no limit
     timeout: float = 20.0
 
@@ -64,6 +65,8 @@ class HTTPEnricher:
         """Look up one indicator, never raising — failures become error records."""
         if not self.supports(kind):
             return self._record(kind, value, error=f"{self.name} does not support {kind}")
+        if self.requires_key and not self.api_key:
+            return self._record(kind, value, error=f"{self.name}: no API key configured")
         try:
             self._throttle()
             return self._lookup(kind, value)

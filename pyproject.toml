@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "iocflow"
 version = "0.2.0"
-description = "Extract threat indicators (IOCs) from unstructured text — IPs, domains, URLs, hashes, CVEs, MITRE techniques, threat actors, and malware families. Layer 1 of an IOC-lifecycle toolkit."
+description = "Extract threat indicators (IOCs) from unstructured text and enrich them against threat-intel sources (VirusTotal, AbuseIPDB, abuse.ch). A layered, pip-extras toolkit for the IOC lifecycle."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }

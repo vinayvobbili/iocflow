@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Enrichers with no API key now fail gracefully: an explicitly-constructed
+  source whose key is missing/empty short-circuits to a clear "no API key
+  configured" error record *before* any network call, instead of making a
+  doomed request. The batch still completes and other sources' verdicts land.
+  (`default_enrichers()` already skipped keyless sources; this covers manual
+  construction too.)
+- Update the package description to reflect extraction **and** enrichment.
+
 ## 0.2.0 (2026-05-30)
 - **Layer 2: enrichment** (`iocflow[enrich]`). `enrich(entities)` looks every
   extracted indicator up against threat-intel sources and returns a normalized
