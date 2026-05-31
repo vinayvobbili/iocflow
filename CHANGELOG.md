@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 0.2.1 (2026-05-30)
 - Enrichers with no API key now fail gracefully: an explicitly-constructed
   source whose key is missing/empty short-circuits to a clear "no API key
   configured" error record *before* any network call, instead of making a
