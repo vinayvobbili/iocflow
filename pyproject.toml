@@ -41,6 +41,9 @@ ai = ["requests>=2.25"]
 # Layer 4: suggested hunts. The deterministic renderers are stdlib-only; this
 # extra only covers the optional LLM behavioral-hunt path.
 hunt = ["requests>=2.25"]
+# Layer 5: response / blocking (PAN-OS, Zscaler, CrowdStrike, Abnormal). The
+# EDL-feed target is stdlib-only; this extra covers the live HTTP targets.
+block = ["requests>=2.25"]
 dev = [
     "requests>=2.25",
     "pytest>=7",

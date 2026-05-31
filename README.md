@@ -255,15 +255,72 @@ The LLM is strictly additive: with no model, or on any model error, you still
 get the full deterministic plan — `suggest()` never raises. Add a query language
 by implementing the `Dialect` protocol (`key`, `label`, `supports`, `render`).
 
+## Layer 5 — response / blocking
+
+Take the indicators the report flagged malicious and block them at the control
+points you operate. **Blocking is dry-run by default** — you must explicitly opt
+into live changes:
+
+```bash
+pip install "iocflow[block]"
+```
+
+```python
+from iocflow import extract
+from iocflow.enrich import enrich
+from iocflow.block import block, unblock
+
+entities = extract(report_text)
+report = enrich(entities)
+
+plan = block(report)                 # DRY RUN — shows exactly what would be blocked
+print(plan.summary())
+# DRY RUN: 1 skipped, 6 dry_run
+
+result = block(report, dry_run=False)   # actually push the blocks
+unblock(report, dry_run=False)          # reverse them
+```
+
+Targets, each acting only on the kinds it can enforce:
+
+- **Palo Alto** — `PanEdlFeed` maintains typed `ip`/`domain`/`url` External
+  Dynamic List files your firewall pulls (decoupled, non-destructive), and
+  `PanOsBlocker` registers IP tags live via the User-ID API for a Dynamic
+  Address Group deny policy.
+- **Zscaler ZIA** — `ZscalerBlocker` adds URLs/domains to the denylist and
+  activates the change.
+- **CrowdStrike Falcon** — `CrowdStrikeBlocker` creates custom IOCs
+  (`md5`/`sha256`/`domain`/`ip`) with a `prevent` action via the IOC Management API.
+- **Abnormal Security** — `AbnormalBlocker` blocks email senders (experimental).
+
+Safety is the point of this layer and it's authoritative:
+
+- **Dry-run by default.** Nothing changes unless you pass `dry_run=False`.
+- **An allowlist guard vetoes benign and internal indicators** — public
+  resolvers, private/internal IPs, well-known domains — *before any target is
+  called*, even if a report mislabeled one as malicious. You cannot accidentally
+  block `8.8.8.8`.
+- **Malicious-only by default** (`min_verdict="suspicious"` to widen), keyless
+  targets are skipped, and a failing target becomes a `FAILED` result rather than
+  crashing the batch. Every result carries the exact payload sent, so a dry run
+  is a full audit.
+
+Set credentials via the environment (`IOCFLOW_PANOS_*`, `IOCFLOW_ZSCALER_*`,
+`IOCFLOW_FALCON_*`, `IOCFLOW_PAN_EDL_PATH`, `IOCFLOW_ABNORMAL_API_TOKEN`) and
+`default_blockers()` builds every configured target, or pass blockers explicitly.
+Bring your own control point by implementing the `Blocker` protocol
+(`name`, `supports`, `block`, `unblock`).
+
 ## Where this is going
 
 iocflow grows in independently-useful layers, each behind its own pip extra.
-**Layer 1** (extraction), **Layer 2** (enrichment), **Layer 3** (AI commentary),
-and **Layer 4** (suggested hunts) ship today; next is optional perimeter
-blocking. The pipeline is a clean hand-off chain of stable types:
-`ExtractedEntities` (L1) → `enrich()` → `EnrichmentReport` (L2) → `comment()` →
-`Commentary` (L3) → `suggest()` → `HuntPlan` (L4), each serializable for the
-next layer.
+**Layers 1–5** — extraction, enrichment, AI commentary, suggested hunts, and
+response/blocking — ship today. The pipeline is a clean hand-off chain of stable
+types: `ExtractedEntities` (L1) → `enrich()` → `EnrichmentReport` (L2) →
+`comment()` → `Commentary` (L3) → `suggest()` → `HuntPlan` (L4) → `block()` →
+`BlockReport` (L5), each serializable. Next: an optional agentic capstone that
+orchestrates these layers as tools with a human-in-the-loop approval gate on the
+blocking step.
 
 ## License
 

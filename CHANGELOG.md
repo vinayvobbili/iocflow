@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- **Layer 5: response / blocking** (`iocflow[block]`). `iocflow.block.block(report)`
+  takes the indicators an enrichment report flagged malicious and blocks them at
+  the control points you operate, returning a `BlockReport` of per-target
+  `BlockResult`s. `unblock(...)` reverses them where the target supports it.
+- Targets: **Palo Alto** — `PanEdlFeed` (maintains typed ip/domain/url External
+  Dynamic List files the firewall pulls; stdlib-only, non-destructive) and
+  `PanOsBlocker` (live User-ID registered-IP/DAG tagging); **Zscaler ZIA**
+  (`ZscalerBlocker`, denylist + activation, url/domain); **CrowdStrike Falcon**
+  (`CrowdStrikeBlocker`, IOC Management API, md5/sha256/domain/ip, OAuth2); and
+  **Abnormal Security** (`AbnormalBlocker`, email sender, experimental).
+- Safety is built in and authoritative: `dry_run=True` is the default everywhere
+  (you must pass `dry_run=False` to change anything); an allowlist guard vetoes
+  benign/internal indicators (public resolvers, private IPs, well-known domains)
+  *before any target is called*, even if a report mislabeled them malicious; only
+  malicious indicators are selected by default (`min_verdict=`); targets with no
+  credentials are skipped; and nothing raises — failures become `FAILED` results.
+- Every `BlockResult` carries the exact payload that was (or would be) sent, so a
+  dry run is a full audit of the intended change.
+- `Blocker` protocol (flat `block`/`unblock(kind, value, ...)` signatures, chosen
+  so each target drops in cleanly as an agent tool later); `default_blockers()`
+  builds every target whose credentials are present in the environment.
+- Core install stays dependency-light: `import iocflow` loads none of
+  `block`/`hunt`/`ai`/`enrich`.
+
 ## 0.4.0 (2026-05-30)
 - **Layer 4: suggested hunts** (`iocflow[hunt]`). `iocflow.hunt.suggest(report)`
   turns an enrichment report (or extracted entities) into ready-to-run hunt
