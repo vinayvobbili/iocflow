@@ -44,12 +44,26 @@ hunt = ["requests>=2.25"]
 # Layer 5: response / blocking (PAN-OS, Zscaler, CrowdStrike, Abnormal). The
 # EDL-feed target is stdlib-only; this extra covers the live HTTP targets.
 block = ["requests>=2.25"]
+# Layer 6: the agentic capstone — a LangGraph multi-agent team over L1–L5, with
+# m1→s1-style failover via langchain-failover and a human-in-the-loop gate.
+# LangGraph/LangChain require Python >=3.10; the rest of iocflow still runs on 3.9.
+agent = [
+    "requests>=2.25",
+    "langgraph>=0.2; python_version >= '3.10'",
+    "langchain-core>=0.3; python_version >= '3.10'",
+    "langchain-openai>=0.2; python_version >= '3.10'",
+    "langchain-failover>=0.1; python_version >= '3.10'",
+]
 dev = [
     "requests>=2.25",
     "pytest>=7",
     "ruff>=0.4",
     "build>=1.0",
     "twine>=5.0",
+    "langgraph>=0.2; python_version >= '3.10'",
+    "langchain-core>=0.3; python_version >= '3.10'",
+    "langchain-openai>=0.2; python_version >= '3.10'",
+    "langchain-failover>=0.1; python_version >= '3.10'",
 ]
 
 [project.scripts]
@@ -66,3 +80,7 @@ packages = ["src/iocflow"]
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+
+[tool.ruff.lint.per-file-ignores]
+# test_agent.py runs pytest.importorskip before its imports (skip on Python 3.9).
+"tests/test_agent.py" = ["E402"]

@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- **Layer 6: the agentic capstone** (`iocflow[agent]`). `iocflow.agent.investigate(text)`
+  drives the whole IOC lifecycle as a small multi-agent team (LangGraph): a
+  supervisor routes to specialist agents — extractor, enricher, hunter,
+  responder — that use Layers 1–5 as tools, returning a `Case` (every layer's
+  output plus a human-readable reasoning `trace`).
+- The LLM applies judgment (supervisor routing, per-indicator response
+  recommendations) while the deterministic layers do the exact work — and are
+  the fallback: with no model configured, the graph runs the layers in a fixed
+  deterministic order. The agent's model is any LangChain chat model;
+  `default_agent_model()` builds a `FailoverChatModel` (primary→secondary, via
+  `langchain-failover`) from `IOCFLOW_LLM_*`.
+- Blocking is human-in-the-loop with three-layer authority: the agent
+  **proposes**, an `ApprovalGate` lets a human **authorize**, and the Layer 5
+  allowlist guard **vetoes** benign/internal indicators — the LLM is never the
+  sole authority for a destructive action. Ships `DenyAllGate` (the safe
+  default — an unattended run blocks nothing), `AutoApproveGate` (dev/CI), and
+  `CLIApprovalGate` (plan-level or per-action); the `ApprovalGate` protocol lets
+  you wire your own approval channel.
+- The IOC lifecycle is also exposed as LangChain tools (`IOCFLOW_TOOLS`) for use
+  in your own agents.
+- Opt-in and isolated: `import iocflow` (and L1–L5) imports no LangChain. The
+  agent extra requires Python 3.10+ (LangGraph/LangChain); the rest of iocflow
+  still runs on 3.9.
+
 ## 0.5.0 (2026-05-31)
 - **Layer 5: response / blocking** (`iocflow[block]`). `iocflow.block.block(report)`
   takes the indicators an enrichment report flagged malicious and blocks them at

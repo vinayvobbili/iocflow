@@ -311,16 +311,60 @@ Set credentials via the environment (`IOCFLOW_PANOS_*`, `IOCFLOW_ZSCALER_*`,
 Bring your own control point by implementing the `Blocker` protocol
 (`name`, `supports`, `block`, `unblock`).
 
+## Layer 6 — the agentic capstone
+
+Hand a report to a small multi-agent team and let it run the whole lifecycle: a
+supervisor routes to specialist agents (extractor → enricher → hunter →
+responder) that use Layers 1–5 as tools. The LLM applies judgment; the
+deterministic layers do the exact work and are the fallback.
+
+```bash
+pip install "iocflow[agent]"      # Python 3.10+ (LangGraph / LangChain)
+```
+
+```python
+from iocflow.agent import investigate
+
+case = investigate(report_text)        # safe: nothing is blocked by default
+print(case.summary())
+print(case.commentary.severity.value, "—", case.commentary.summary)
+for line in case.trace:                # the agents' reasoning trace
+    print(" •", line)
+```
+
+The model is any LangChain chat model; `default_agent_model()` builds a
+`FailoverChatModel` (primary→secondary, via
+[`langchain-failover`](https://pypi.org/project/langchain-failover/)) from the
+same `IOCFLOW_LLM_*` env. With no model configured, the graph runs the layers in
+a fixed deterministic order — so it always produces a `Case`.
+
+**Blocking is human-in-the-loop, with three-layer authority.** The responder
+agent *proposes* blocks, an `ApprovalGate` lets a human *authorize* them, and the
+Layer 5 allowlist guard *vetoes* benign/internal indicators underneath — the LLM
+is never the sole authority for a destructive action. The default is
+`DenyAllGate` (an unattended run blocks nothing); pass an approving gate to act:
+
+```python
+from iocflow.agent import investigate, CLIApprovalGate
+case = investigate(report_text, gate=CLIApprovalGate())   # prompts before blocking
+```
+
+`AutoApproveGate` (dev/CI) and `CLIApprovalGate` (plan-level or per-action) ship
+in the box; implement the `ApprovalGate` protocol to wire your own channel
+(Slack/Teams/XSOAR/web). The lifecycle is also exposed as LangChain tools
+(`IOCFLOW_TOOLS`) for your own agents.
+
 ## Where this is going
 
 iocflow grows in independently-useful layers, each behind its own pip extra.
-**Layers 1–5** — extraction, enrichment, AI commentary, suggested hunts, and
-response/blocking — ship today. The pipeline is a clean hand-off chain of stable
-types: `ExtractedEntities` (L1) → `enrich()` → `EnrichmentReport` (L2) →
-`comment()` → `Commentary` (L3) → `suggest()` → `HuntPlan` (L4) → `block()` →
-`BlockReport` (L5), each serializable. Next: an optional agentic capstone that
-orchestrates these layers as tools with a human-in-the-loop approval gate on the
-blocking step.
+**Layers 1–6** all ship today — extraction, enrichment, AI commentary, suggested
+hunts, response/blocking, and the agentic capstone. The pipeline is a clean
+hand-off chain of stable types: `ExtractedEntities` (L1) → `enrich()` →
+`EnrichmentReport` (L2) → `comment()` → `Commentary` (L3) → `suggest()` →
+`HuntPlan` (L4) → `block()` → `BlockReport` (L5) — and `investigate()` (L6)
+orchestrates the whole chain as a multi-agent team with a human-in-the-loop gate.
+Everything but the agent capstone runs on Python 3.9+; `import iocflow` stays
+dependency-light (one dependency) and pulls in no layer you don't ask for.
 
 ## License
 
