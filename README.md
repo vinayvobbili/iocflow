@@ -166,13 +166,56 @@ Bring your own source by implementing the `Enricher` protocol (`name`,
 `HTTPEnricher` to get session handling, rate-limiting, and error-wrapping for
 free.
 
+## Layer 3 — AI commentary
+
+Turn the enrichment report into an analyst-style assessment with an LLM. Install
+the extra and point it at any OpenAI-compatible endpoint (OpenAI, Azure, or a
+local server like vLLM / Ollama / LM Studio):
+
+```bash
+pip install "iocflow[ai]"
+export IOCFLOW_LLM_API_KEY=...                       # omit for keyless local servers
+export IOCFLOW_LLM_BASE_URL=http://localhost:11434/v1   # default: OpenAI
+export IOCFLOW_LLM_MODEL=gpt-4o-mini
+```
+
+```python
+from iocflow import extract
+from iocflow.enrich import enrich
+from iocflow.ai import comment
+
+entities = extract(report_text)
+report = enrich(entities)
+note = comment(report, entities=entities, text=report_text)
+
+print(note.severity.value, "—", note.summary)
+for finding in note.key_findings:
+    print(" •", finding)
+for action in note.recommendations:
+    print(" →", action)
+```
+
+`comment()` returns a structured `Commentary` (`severity`, `assessment`,
+`key_findings`, `recommendations`) and is hardened against flaky model output:
+
+- The model is asked for JSON; if it answers with prose or fenced JSON, the text
+  is parsed best-effort, falling back to using it as the narrative.
+- If no model is configured, or a call fails, `comment()` returns a
+  **deterministic assessment built straight from the report** — so it always
+  returns a usable result and never raises. The LLM is the primary path; the
+  fallback guarantees the pipeline keeps working without one.
+
+Bring any model by implementing the `CommentaryModel` protocol (`name` +
+`complete(system, user, *, json=False) -> str`).
+
 ## Where this is going
 
 iocflow grows in independently-useful layers, each behind its own pip extra.
-**Layer 1** (extraction) and **Layer 2** (enrichment) ship today; next are AI
-commentary, suggested hunts, and optional perimeter blocking. The pipeline is a
-clean hand-off chain of stable types: `ExtractedEntities` (L1) feeds `enrich()`,
-which returns an `EnrichmentReport` (L2) that later layers consume.
+**Layer 1** (extraction), **Layer 2** (enrichment), and **Layer 3** (AI
+commentary) ship today; next are suggested hunts and optional perimeter
+blocking. The pipeline is a clean hand-off chain of stable types:
+`ExtractedEntities` (L1) → `enrich()` → `EnrichmentReport` (L2) → `comment()` →
+`Commentary` (L3), each serializable for the next layer.
 
 ## License
 

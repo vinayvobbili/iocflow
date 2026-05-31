@@ -36,6 +36,8 @@ dependencies = [
 mitre = ["requests>=2.25"]
 # Layer 2: enrichment against threat-intel sources (VirusTotal, AbuseIPDB, abuse.ch).
 enrich = ["requests>=2.25"]
+# Layer 3: AI commentary via any OpenAI-compatible chat endpoint.
+ai = ["requests>=2.25"]
 dev = [
     "requests>=2.25",
     "pytest>=7",

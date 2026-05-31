@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Layer 3: AI commentary** (`iocflow[ai]`). `iocflow.ai.comment(report)` turns
+  an enrichment report into a structured `Commentary` (`severity`, `assessment`,
+  `key_findings`, `recommendations`).
+- Bundled `OpenAIChatModel` adapter (`requests`-only) works with any
+  OpenAI-compatible endpoint — OpenAI, Azure, vLLM, Ollama, LM Studio, gateways.
+  Configured via `IOCFLOW_LLM_API_KEY` / `IOCFLOW_LLM_BASE_URL` /
+  `IOCFLOW_LLM_MODEL`; `CommentaryModel` protocol lets any other model plug in.
+- Robust output handling: the model is asked for JSON, with best-effort parsing
+  (strips code fences / surrounding prose) and a narrative fallback. With no
+  model configured or on a model error, `comment()` returns a deterministic
+  assessment built from the report — it always returns a `Commentary` and never
+  raises.
+- Core install stays dependency-light: `import iocflow` does not import
+  `iocflow.ai` (or `iocflow.enrich`). `Commentary` is the seam for Layer 4.
+
 ## 0.2.1 (2026-05-30)
 - Enrichers with no API key now fail gracefully: an explicitly-constructed
   source whose key is missing/empty short-circuits to a clear "no API key
