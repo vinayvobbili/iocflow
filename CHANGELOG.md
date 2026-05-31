@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 0.4.0 (2026-05-30)
 - **Layer 4: suggested hunts** (`iocflow[hunt]`). `iocflow.hunt.suggest(report)`
   turns an enrichment report (or extracted entities) into ready-to-run hunt
   queries — a `HuntPlan` of `Hunt`s, each with a `query`, `severity`, and
