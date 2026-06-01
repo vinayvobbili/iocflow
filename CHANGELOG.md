@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.9.0 (2026-05-31)
 - **MISP interop** (`iocflow[misp]`). Connects iocflow to a MISP instance three
   ways, each conforming to an existing seam: `MISPEnricher` is an `Enricher`
   (a `to_ids` hit → malicious, a context-only hit → suspicious, no hit →
