@@ -11,7 +11,7 @@ base — see ``targets/pan_edl.py``.)
 """
 from __future__ import annotations
 
-from typing import Optional, Set
+from typing import FrozenSet, Optional
 
 try:
     import requests
@@ -27,7 +27,7 @@ class HTTPBlocker:
     """Base for HTTP-API blockers (PAN-OS, Zscaler, CrowdStrike, …)."""
 
     name: str = ""
-    supported_kinds: Set[str] = frozenset()
+    supported_kinds: FrozenSet[str] = frozenset()
     supports_unblock: bool = False
     timeout: float = 20.0
     verify: bool = True  # TLS verification; some on-prem appliances need this off

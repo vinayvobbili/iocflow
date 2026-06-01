@@ -12,17 +12,28 @@ import operator
 from dataclasses import dataclass
 from typing import Annotated, List, Optional, TypedDict
 
+# These result types are imported for real (not under TYPE_CHECKING): LangGraph
+# resolves the state schema via ``get_type_hints(CaseFile)`` at graph-build time,
+# so the annotations below must be live names. All are dependency-light core
+# modules, and this module only loads as part of the (already heavy) agent layer.
+from iocflow.agent.gate import BlockProposal
+from iocflow.ai.models import Commentary
+from iocflow.block.models import BlockReport
+from iocflow.enrich.models import EnrichmentReport
+from iocflow.hunt.models import HuntPlan
+from iocflow.models import ExtractedEntities
+
 
 class CaseFile(TypedDict, total=False):
     """LangGraph state. Domain objects are stored whole; lists accumulate."""
 
     text: str
-    entities: object          # ExtractedEntities (L1)
-    enrichment: object        # EnrichmentReport (L2)
-    commentary: object        # Commentary (L3)
-    hunts: object             # HuntPlan (L4)
-    proposal: object          # BlockProposal (L5, pre-approval)
-    block_report: object      # BlockReport (L5, post-execution)
+    entities: "ExtractedEntities"      # L1
+    enrichment: "EnrichmentReport"     # L2
+    commentary: "Commentary"           # L3
+    hunts: "HuntPlan"                  # L4
+    proposal: "BlockProposal"          # L5, pre-approval
+    block_report: "BlockReport"        # L5, post-execution
     trace: Annotated[List[str], operator.add]
     visited: Annotated[List[str], operator.add]
     next: str
@@ -33,12 +44,12 @@ class Case:
     """The completed investigation — every layer's output plus the trace."""
 
     text: str
-    entities: object = None
-    enrichment: object = None
-    commentary: object = None
-    hunts: object = None
-    proposal: object = None
-    block_report: object = None
+    entities: "Optional[ExtractedEntities]" = None
+    enrichment: "Optional[EnrichmentReport]" = None
+    commentary: "Optional[Commentary]" = None
+    hunts: "Optional[HuntPlan]" = None
+    proposal: "Optional[BlockProposal]" = None
+    block_report: "Optional[BlockReport]" = None
     trace: Optional[List[str]] = None
 
     @classmethod

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Optional, Set
+from typing import FrozenSet, Optional
 
 try:
     import requests
@@ -34,7 +34,7 @@ class HTTPEnricher:
     """
 
     name: str = ""
-    supported_kinds: Set[str] = frozenset()
+    supported_kinds: FrozenSet[str] = frozenset()
     requires_key: bool = True  # most sources need an API key; skip the call without one
     min_interval: float = 0.0  # seconds between calls (per instance); 0 = no limit
     timeout: float = 20.0

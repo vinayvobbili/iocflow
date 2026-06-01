@@ -25,6 +25,19 @@ jobs:
       - run: pip install ruff
       - run: ruff check .
 
+  types:
+    name: Types (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # Install every extra so the typed third-party deps and their stubs are
+      # present; mypy itself targets the 3.9 floor (configured in pyproject).
+      - run: pip install -e ".[dev]"
+      - run: mypy
+
   test:
     name: Test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest

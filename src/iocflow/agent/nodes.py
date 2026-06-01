@@ -142,7 +142,7 @@ def _proposal_from_dry(dry) -> List[ProposedAction]:
     """Group a dry-run report into one ProposedAction per indicator."""
     from iocflow.block.models import BlockStatus
 
-    by_ind = {}
+    by_ind: "dict[tuple, list]" = {}
     for r in dry.results:
         if r.target == "guard" or r.status is not BlockStatus.DRY_RUN:
             continue

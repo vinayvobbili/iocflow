@@ -109,7 +109,7 @@ def to_stix(source, *, created: Optional[str] = None) -> dict:
         if pattern is not None:
             types, confidence = _VERDICT_TYPES.get(verdicts.get((kind, value), "unknown"),
                                                    _VERDICT_TYPES["unknown"])
-            obj = {
+            obj: dict = {
                 "type": "indicator", "spec_version": _SPEC,
                 "id": _sid("indicator", f"{kind}:{value}"),
                 "created": ts, "modified": ts,

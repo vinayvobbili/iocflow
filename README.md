@@ -571,6 +571,35 @@ orchestrates the whole chain as a multi-agent team with a human-in-the-loop gate
 Everything but the agent capstone runs on Python 3.9+; `import iocflow` stays
 dependency-light (one dependency) and pulls in no layer you don't ask for.
 
+## Quality & trust
+
+iocflow is built to be depended on:
+
+- **Typed.** The package ships a `py.typed` marker (PEP 561), so your type
+  checker sees iocflow's real signatures. The whole codebase type-checks clean
+  under `mypy` in CI.
+- **Fuzzed.** A [Hypothesis](https://hypothesis.readthedocs.io/) property suite
+  throws arbitrary Unicode, defang noise, and IOC-shaped tokens at the
+  extractor. Layer 1's contract is simple — it parses untrusted text and **never
+  crashes**, never executes input — and the suite holds it to that, plus
+  invariants like "every emitted IP is a valid address" and "extraction is
+  deterministic".
+- **Benchmarked.** Accuracy is measured, not asserted. Run the scorecard against
+  the labeled corpus:
+
+  ```bash
+  python -m benchmarks
+  # OVERALL  precision 0.979  recall 1.000  f1 0.989
+  ```
+
+  A regression test guards the headline precision/recall so accuracy can't
+  silently drift.
+- **Secure by design.** Blocking is dry-run by default behind an authoritative
+  allowlist guard, the agent gate denies by default, and the MCP server never
+  exposes a tool that pushes real blocks. See
+  [`SECURITY.md`](SECURITY.md) for the full posture and how to report a
+  vulnerability.
+
 ## License
 
 MIT

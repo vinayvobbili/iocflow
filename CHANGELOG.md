@@ -1,6 +1,26 @@
 # Changelog
 
 ## Unreleased
+- **Trust hardening.** iocflow now ships type information and is verified by a
+  stronger CI gate.
+  - **Typed (`py.typed`).** The package is marked typed (PEP 561), so downstream
+    users get full type-checking against iocflow's public API. The whole package
+    type-checks clean under `mypy` (now a CI job), with sound types threaded
+    through the agent state and the env/config seams along the way.
+  - **Fuzzed extractor.** A Hypothesis property suite hammers `extract` and every
+    individual extractor with arbitrary Unicode, defang noise, and IOC-shaped
+    tokens, asserting the hard contract — *never crash on untrusted input* — plus
+    structural and semantic invariants (valid IPs, correct hash lengths,
+    canonical CVE form, determinism). Fixed a latent `None`-crash in the hunt
+    LLM prompt path found while typing.
+  - **Accuracy benchmark.** A hand-labeled corpus of report snippets (positives
+    and benign-distractor negatives) with a precision/recall evaluator:
+    `python -m benchmarks` prints a scorecard, and `tests/test_benchmark.py`
+    guards the headline metrics (currently ~0.98 precision, 1.0 recall) against
+    silent regression.
+  - **`SECURITY.md`.** A private vulnerability-disclosure policy plus the
+    library's safety guarantees (dry-run blocking, allowlist guard, deny-by-default
+    gate, MCP never pushes blocks).
 
 ## 0.11.0 (2026-05-31)
 - **MCP server** (`iocflow[mcp]`). iocflow now speaks the Model Context Protocol,

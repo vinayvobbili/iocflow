@@ -28,7 +28,7 @@ _MAX_LLM_HUNTS = 8
 
 
 def llm_hunts(
-    report: "EnrichmentReport",
+    report: "Optional[EnrichmentReport]",
     entities: "Optional[ExtractedEntities]",
     commentary: "Optional[Commentary]",
     dialects: list,

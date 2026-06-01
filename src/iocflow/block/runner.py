@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, List, Mapping, Optional, Sequence
 
 from iocflow.block.guard import guard as guard_indicators
 from iocflow.block.models import BlockReport, BlockResult, BlockStatus
@@ -139,7 +139,7 @@ def _select(report, indicators, min_verdict) -> List[Indicator]:
     return out
 
 
-def default_blockers(env: Optional[dict] = None) -> List[Blocker]:
+def default_blockers(env: Optional[Mapping[str, str]] = None) -> List[Blocker]:
     """Build every blocker whose configuration is present in the environment.
 
     - ``IOCFLOW_PAN_EDL_PATH``                                  → PanEdlFeed

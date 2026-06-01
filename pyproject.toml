@@ -76,6 +76,9 @@ dev = [
     "ruff>=0.4",
     "build>=1.0",
     "twine>=5.0",
+    "mypy>=1.8",
+    "types-requests>=2.25",
+    "hypothesis>=6.0",
     "langgraph>=0.2; python_version >= '3.10'",
     "langchain-core>=0.3; python_version >= '3.10'",
     "langchain-openai>=0.2; python_version >= '3.10'",
@@ -94,6 +97,31 @@ Issues = "https://github.com/vinayvobbili/iocflow/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/iocflow"]
+
+[tool.pytest.ini_options]
+# Make the top-level `benchmarks` package importable from the accuracy test.
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/iocflow"]
+warn_redundant_casts = true
+no_implicit_optional = true
+
+# Optional third-party deps each live behind a pip extra, so they may be absent
+# in a given environment and several ship no type stubs. Don't fail type-checking
+# of the typed core on their account.
+[[tool.mypy.overrides]]
+module = [
+    "feedparser",
+    "tldextract",
+    "langgraph.*",
+    "langchain_openai",
+    "langchain_core.*",
+    "langchain_failover",
+    "mcp.*",
+]
+ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100

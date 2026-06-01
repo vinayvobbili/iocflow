@@ -162,7 +162,7 @@ def _cmd_investigate(args) -> int:
         _emit_json(case.to_dict())
     else:
         print(case.summary())
-        for line in case.trace:
+        for line in case.trace or []:
             print(f"  · {line}")
     return 0
 
@@ -186,7 +186,9 @@ def _cmd_poll(args) -> int:
         print(f"{len(results)} new trigger(s) from {len(sources)} source(s)")
         for r in results:
             tag = "ok" if r.ok else f"ERROR: {r.error}"
-            summary = r.output.entities.summary() if (r.ok and r.output) else ""
+            # output is duck-typed (a TriageResult by default); read defensively.
+            ents = getattr(r.output, "entities", None) if r.ok else None
+            summary = ents.summary() if ents is not None else ""
             print(f"  [{tag}] {r.trigger.source}:{r.trigger.id} {r.trigger.title or ''} {summary}")
     return 0
 

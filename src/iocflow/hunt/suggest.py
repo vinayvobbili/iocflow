@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 from collections import OrderedDict
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from iocflow.hunt.models import Hunt, HuntPlan
 from iocflow.hunt.registry import DEFAULT_DIALECTS, get_dialect
@@ -96,7 +96,7 @@ def suggest(
     return plan
 
 
-def default_model(env: Optional[dict] = None):
+def default_model(env: Optional[Mapping[str, str]] = None):
     """Build an :class:`~iocflow.ai.OpenAIChatModel` from the environment, or ``None``.
 
     Reuses the same config as Layer 3 (``IOCFLOW_LLM_API_KEY`` /
@@ -111,14 +111,15 @@ def default_model(env: Optional[dict] = None):
 
     from iocflow.ai.openai_compat import OpenAIChatModel
 
-    kwargs = {}
+    kwargs: "dict[str, str]" = {}
     if key:
         kwargs["api_key"] = key
     if base:
         kwargs["base_url"] = base
     if model:
         kwargs["model"] = model
-    return OpenAIChatModel(**kwargs)
+    make: Any = OpenAIChatModel
+    return make(**kwargs)
 
 
 # -- helpers ---------------------------------------------------------------

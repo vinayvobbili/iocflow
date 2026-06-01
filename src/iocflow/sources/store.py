@@ -17,7 +17,7 @@ class MemorySeenStore:
     """An in-memory set of seen keys. Not durable — resets each process."""
 
     def __init__(self) -> None:
-        self._seen = set()
+        self._seen: "set[str]" = set()
 
     def seen(self, key: str) -> bool:
         return key in self._seen

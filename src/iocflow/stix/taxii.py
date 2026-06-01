@@ -64,7 +64,7 @@ class TaxiiSource:
         headers = {"Accept": _ACCEPT}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
-        params = {"limit": self.limit}
+        params: dict = {"limit": self.limit}
         if self.added_after:
             params["added_after"] = self.added_after
         auth = (self.username, self.password) if (self.username and not self.token) else None

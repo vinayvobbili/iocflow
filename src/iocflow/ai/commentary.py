@@ -10,7 +10,7 @@ import json
 import logging
 import os
 import re
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from iocflow.ai.models import Commentary, Severity
 from iocflow.ai.prompt import SYSTEM_PROMPT, build_user_prompt
@@ -56,7 +56,7 @@ def comment(
     return _parse(raw, report, model_name=_name(model))
 
 
-def default_model(env: Optional[dict] = None):
+def default_model(env: Optional[Mapping[str, str]] = None):
     """Build an :class:`OpenAIChatModel` from the environment, or ``None``.
 
     Reads ``IOCFLOW_LLM_API_KEY``, ``IOCFLOW_LLM_BASE_URL``, and
@@ -72,14 +72,15 @@ def default_model(env: Optional[dict] = None):
 
     from iocflow.ai.openai_compat import OpenAIChatModel
 
-    kwargs = {}
+    kwargs: "dict[str, str]" = {}
     if key:
         kwargs["api_key"] = key
     if base:
         kwargs["base_url"] = base
     if model:
         kwargs["model"] = model
-    return OpenAIChatModel(**kwargs)
+    make: Any = OpenAIChatModel
+    return make(**kwargs)
 
 
 # -- parsing ---------------------------------------------------------------

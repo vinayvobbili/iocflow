@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, List, Mapping, Optional, Sequence
 
 from iocflow.enrich.cache import Cache
 from iocflow.enrich.models import EnrichmentRecord, EnrichmentReport
@@ -90,7 +90,7 @@ def _run_one(enricher: Enricher, ind: Indicator, cache: Optional[Cache]) -> Enri
     return record
 
 
-def default_enrichers(env: Optional[dict] = None) -> List[Enricher]:
+def default_enrichers(env: Optional[Mapping[str, str]] = None) -> List[Enricher]:
     """Build every free-tier enricher whose API key is present.
 
     Reads, by default, from ``os.environ``:

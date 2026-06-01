@@ -12,7 +12,7 @@ sources on by setting env, exactly like the enrichers and blockers.
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 from iocflow.sources.protocol import Source
 
@@ -21,7 +21,7 @@ def _truthy(v: str) -> bool:
     return v.strip().lower() in ("1", "true", "yes", "on")
 
 
-def default_sources(env: Optional[dict] = None) -> List[Source]:
+def default_sources(env: Optional[Mapping[str, str]] = None) -> List[Source]:
     env = os.environ if env is None else env
     sources: List[Source] = []
 

@@ -9,10 +9,10 @@ with nothing configured it returns ``None`` and the graph runs deterministically
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 
-def default_agent_model(env: Optional[dict] = None):
+def default_agent_model(env: Optional[Mapping[str, str]] = None):
     """Construct the agent model from ``IOCFLOW_LLM_*`` (and optional secondary).
 
     Primary:   ``IOCFLOW_LLM_BASE_URL`` / ``IOCFLOW_LLM_API_KEY`` / ``IOCFLOW_LLM_MODEL``
@@ -50,9 +50,12 @@ def _chat_openai(base_url: Optional[str], api_key: Optional[str], model: str):
         from langchain_openai import ChatOpenAI
     except ImportError:  # pragma: no cover - optional dependency
         return None
-    kwargs = {"model": model, "temperature": 0.1}
+    kwargs: "dict[str, object]" = {"model": model, "temperature": 0.1}
     if base_url:
         kwargs["base_url"] = base_url
     # ChatOpenAI requires a non-empty key even for keyless local servers.
     kwargs["api_key"] = api_key or "EMPTY"
-    return ChatOpenAI(**kwargs)
+    # ChatOpenAI's typed signature demands SecretStr for the key, but it coerces
+    # a plain str at runtime; construct through an Any alias to use that path.
+    make: Any = ChatOpenAI
+    return make(**kwargs)
