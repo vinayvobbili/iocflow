@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.11.0 (2026-05-31)
 - **MCP server** (`iocflow[mcp]`). iocflow now speaks the Model Context Protocol,
   so any MCP client (Claude Desktop, an IDE assistant, your own agent) can drive
   the lifecycle as tools. Run it with the `iocflow-mcp` console script or
