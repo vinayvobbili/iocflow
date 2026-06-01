@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.10.0 (2026-05-31)
 - **Full lifecycle CLI.** The `iocflow` command grew from extract-only to the
   whole lifecycle as subcommands: `extract` (still the default — `iocflow "…"`
   works unchanged), `enrich`, `comment`, `hunt`, `block` (dry-run unless
