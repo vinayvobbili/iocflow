@@ -1,0 +1,53 @@
+# Example: use the iocflow GitHub Action to scan for IOCs in CI.
+#
+# Drop this in .github/workflows/ in your own repo. Two common patterns:
+#   1. Scan a file (e.g. an advisory or a changed doc) and post the findings.
+#   2. Gate a PR — fail if any indicator is present where none should be.
+name: IOC scan (example)
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  scan-text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Extract IOCs from inline text
+        id: ioc
+        uses: vinayvobbili/iocflow@v1
+        with:
+          command: extract
+          text: "Beaconing to 185.220.101.5 and evil-payload.ru, CVE-2021-44228"
+
+      - name: Use the results
+        run: |
+          echo "Found ${{ steps.ioc.outputs.count }} indicators"
+          echo '${{ steps.ioc.outputs.json }}'
+
+  scan-file-and-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Fail the job if any IOC appears in a file that should be clean.
+      - name: Gate on findings
+        uses: vinayvobbili/iocflow@v1
+        with:
+          command: extract
+          file: docs/CHANGES.md
+          fail-on-findings: "true"
+
+  enrich-with-extra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enrich (needs the [enrich] extra + a key)
+        uses: vinayvobbili/iocflow@v1
+        with:
+          command: enrich
+          extras: enrich
+          text: "c2 at 185.220.101.5"
+        env:
+          IOCFLOW_ABUSEIPDB_API_KEY: ${{ secrets.IOCFLOW_ABUSEIPDB_API_KEY }}

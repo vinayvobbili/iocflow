@@ -1,6 +1,23 @@
 # Changelog
 
 ## Unreleased
+- **Full lifecycle CLI.** The `iocflow` command grew from extract-only to the
+  whole lifecycle as subcommands: `extract` (still the default — `iocflow "…"`
+  works unchanged), `enrich`, `comment`, `hunt`, `block` (dry-run unless
+  `--commit`), `investigate`, `poll` (run env-configured ingestion sources once),
+  and `stix --to`/`--from`. Each reads text from args or stdin, speaks `--json`,
+  imports only its own layer (so it needs just that extra), and still runs with
+  no API keys (the deterministic layers produce output). `python -m iocflow`
+  works via a new `__main__`.
+- **Docker image.** A multi-stage `Dockerfile` builds a slim image with every
+  extra installed; the entrypoint is `iocflow` and it runs as a non-root user.
+- **GitHub Action.** A composite `action.yml` (`uses: vinayvobbili/iocflow@v1`)
+  scans inline text or a file for IOCs in CI, exposes the JSON result and an
+  indicator `count`, and can fail the job on findings (`fail-on-findings`) as a
+  content gate. Example workflow in `examples/github-action-usage.yml`.
+- Pin the build backend below `hatchling` 1.30, which emits Metadata-Version 2.5
+  — rejected by current `packaging`/`twine` and PyPI's validator; 2.4 is the
+  accepted version.
 
 ## 0.9.0 (2026-05-31)
 - **MISP interop** (`iocflow[misp]`). Connects iocflow to a MISP instance three

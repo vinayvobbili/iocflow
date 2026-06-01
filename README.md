@@ -108,11 +108,56 @@ entities.threat_actors_enriched[0].aliases_display()  # "Fancy Bear, Sofacy, Sed
 
 ## Command line
 
+The whole lifecycle is a CLI. A bare invocation extracts (the common case); every
+layer is a subcommand, takes text from arguments or stdin, and speaks `--json`.
+
 ```bash
-iocflow "APT28 used 185.220.101.5 and evil[.]example[.]com"
-echo "report text…" | iocflow --json
-iocflow --mitre "Emotet dropped Cobalt Strike"     # needs iocflow[mitre]
+iocflow "APT28 used 185.220.101.5 and evil[.]example[.]com"   # extract (default)
+echo "report text…" | iocflow --json                          # stdin + JSON
+
+iocflow enrich      "c2 at 185.220.101.5"      # L1→L2 (uses env API keys)
+iocflow comment     "…report…"                 # +L3 AI assessment
+iocflow hunt --dialect sigma "…report…"        # +L4 hunt queries
+iocflow block       "…report…"                 # L5 — DRY RUN; add --commit to push
+iocflow investigate "…report…"                 # L6 agentic capstone (--gate auto for dev)
+iocflow poll                                   # ingestion: run env-configured sources once
+iocflow stix --to   "1.2.3.4"                  # emit a STIX 2.1 bundle
+iocflow stix --from < bundle.json              # parse STIX into indicators
 ```
+
+Each subcommand imports only its own layer, so it just needs that extra (e.g.
+`pip install "iocflow[hunt]"`). With no API keys the deterministic layers still
+run — `enrich` returns an empty report, `hunt`/`comment` produce their
+deterministic output — so the CLI is useful offline. `python -m iocflow …` works
+too.
+
+### Docker
+
+The image bundles every extra, so any subcommand works out of the box; the
+entrypoint *is* `iocflow`, and it runs as a non-root user.
+
+```bash
+docker build -t iocflow .
+echo "c2 at 185.220.101.5" | docker run -i --rm iocflow extract --json
+docker run --rm -e IOCFLOW_ABUSEIPDB_API_KEY=… iocflow enrich "185.220.101.5"
+```
+
+### GitHub Action
+
+Scan text or a file for IOCs in CI — and optionally fail the job when any are
+found (a content gate). Outputs the JSON result and an indicator `count`.
+
+```yaml
+- uses: vinayvobbili/iocflow@v1
+  id: ioc
+  with:
+    command: extract
+    file: docs/CHANGES.md
+    fail-on-findings: "true"     # gate: non-zero exit if any IOC appears
+- run: echo "found ${{ steps.ioc.outputs.count }} indicators"
+```
+
+See [`examples/github-action-usage.yml`](examples/github-action-usage.yml).
 
 ## Layer 2 — enrichment
 

@@ -1,0 +1,105 @@
+name: "iocflow"
+description: "Extract and triage indicators of compromise (IOCs) from text or files in CI."
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  command:
+    description: "iocflow subcommand to run (extract, enrich, hunt, stix, …)."
+    default: "extract"
+  text:
+    description: "Text to scan. Mutually exclusive with `file`."
+    default: ""
+  file:
+    description: "Path to a file to scan (used when `text` is empty)."
+    default: ""
+  args:
+    description: "Extra arguments appended to the subcommand (e.g. '--dialect sigma')."
+    default: ""
+  version:
+    description: "Version spec, e.g. '==0.10.0' or '>=0.9'. Empty installs the latest."
+    default: ""
+  extras:
+    description: "Comma-separated extras to install, e.g. 'enrich,stix'. Empty = core only."
+    default: ""
+  python-version:
+    description: "Python version to set up."
+    default: "3.12"
+  fail-on-findings:
+    description: "Exit non-zero when any indicator is found (use as a CI gate)."
+    default: "false"
+
+outputs:
+  json:
+    description: "The command result as JSON."
+    value: ${{ steps.run.outputs.json }}
+  count:
+    description: "Number of indicators found (from extract-shaped output; 0 otherwise)."
+    value: ${{ steps.run.outputs.count }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install iocflow
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ -n "${{ inputs.extras }}" ]; then
+          spec="iocflow[${{ inputs.extras }}]${{ inputs.version }}"
+        else
+          spec="iocflow${{ inputs.version }}"
+        fi
+        python -m pip install --upgrade pip
+        python -m pip install "$spec"
+
+    - name: Run iocflow
+      id: run
+      shell: bash
+      env:
+        IOCFLOW_COMMAND: ${{ inputs.command }}
+        IOCFLOW_TEXT: ${{ inputs.text }}
+        IOCFLOW_FILE: ${{ inputs.file }}
+        IOCFLOW_ARGS: ${{ inputs.args }}
+        IOCFLOW_FAIL_ON_FINDINGS: ${{ inputs.fail-on-findings }}
+      run: |
+        set -euo pipefail
+        # Feed input via stdin (no shell interpolation of untrusted text).
+        if [ -n "${IOCFLOW_FILE}" ]; then
+          INPUT="$(cat "${IOCFLOW_FILE}")"
+        else
+          INPUT="${IOCFLOW_TEXT}"
+        fi
+        OUT="$(printf '%s' "$INPUT" | iocflow "${IOCFLOW_COMMAND}" --json ${IOCFLOW_ARGS})"
+        echo "$OUT"
+
+        python - "$OUT" <<'PY'
+        import json, os, sys
+
+        data = json.loads(sys.argv[1] or "{}")
+
+        def count_indicators(d):
+            if not isinstance(d, dict) or "ips" not in d:
+                return 0
+            n = sum(len(d.get(k) or []) for k in
+                    ("ips", "domains", "urls", "filenames", "cves", "emails"))
+            n += sum(len(v or []) for v in (d.get("hashes") or {}).values())
+            return n
+
+        count = count_indicators(data)
+        out = os.environ["GITHUB_OUTPUT"]
+        with open(out, "a", encoding="utf-8") as fh:
+            fh.write(f"count={count}\n")
+            fh.write("json<<__IOCFLOW_EOF__\n")
+            fh.write(sys.argv[1].rstrip("\n") + "\n")
+            fh.write("__IOCFLOW_EOF__\n")
+
+        fail = os.environ.get("IOCFLOW_FAIL_ON_FINDINGS", "false").lower() in ("1", "true", "yes")
+        if fail and count > 0:
+            sys.stderr.write(f"iocflow: {count} indicator(s) found — failing as requested.\n")
+            sys.exit(1)
+        PY

@@ -1,5 +1,7 @@
 [build-system]
-requires = ["hatchling"]
+# Pin below 1.30: hatchling 1.30 emits Metadata-Version 2.5, which current
+# packaging/twine (and PyPI's validator) reject. 2.4 is the accepted version.
+requires = ["hatchling>=1.27,<1.30"]
 build-backend = "hatchling.build"
 
 [project]
