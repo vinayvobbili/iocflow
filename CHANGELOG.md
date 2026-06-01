@@ -1,6 +1,17 @@
 # Changelog
 
 ## Unreleased
+- **MCP server** (`iocflow[mcp]`). iocflow now speaks the Model Context Protocol,
+  so any MCP client (Claude Desktop, an IDE assistant, your own agent) can drive
+  the lifecycle as tools. Run it with the `iocflow-mcp` console script or
+  `python -m iocflow.mcp` (stdio transport). Seven tools: `extract_iocs`,
+  `enrich_indicators`, `assess_indicators`, `suggest_hunts`, `propose_blocks`
+  (always a dry run — pushing real blocks is deliberately not exposed as a tool),
+  and `to_stix_bundle` / `from_stix_bundle`.
+- The tool functions live in `iocflow.mcp.tools` and are SDK-free: importing the
+  package (and unit-testing the tools) needs no MCP SDK — only running the server
+  does (`build_server()`). The MCP SDK requires Python 3.10+; the rest of iocflow
+  still runs on 3.9. New `examples/mcp_server.py`.
 
 ## 0.10.0 (2026-05-31)
 - **Full lifecycle CLI.** The `iocflow` command grew from extract-only to the

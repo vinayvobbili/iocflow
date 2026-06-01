@@ -42,6 +42,7 @@ automatically; `185.220.101.5` is kept while private/benign IPs are dropped.
 pip install iocflow              # core — one dependency (tldextract)
 pip install "iocflow[mitre]"     # + a ready-made MITRE ATT&CK malware-name source
 pip install "iocflow[misp]"      # + MISP interop: enrich / ingest / share back
+pip install "iocflow[mcp]"       # + an MCP server (drive the lifecycle from any MCP client)
 ```
 
 ## What it extracts
@@ -530,6 +531,33 @@ when its enrichment verdict is malicious. Configure via `IOCFLOW_MISP_URL` +
 `IOCFLOW_MISP_KEY` (and `IOCFLOW_MISP_SOURCE=true` to auto-wire the event source).
 A thin REST client — stdlib + `requests`, no `pymisp`. See
 [`examples/misp_interop.py`](examples/misp_interop.py).
+
+## MCP server
+
+iocflow speaks the **Model Context Protocol**, so any MCP client — Claude
+Desktop, an IDE assistant, your own agent — can drive the lifecycle as tools.
+
+```bash
+pip install "iocflow[mcp]"      # Python 3.10+
+iocflow-mcp                     # serve over stdio (also: python -m iocflow.mcp)
+```
+
+Wire it into Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "iocflow": { "command": "iocflow-mcp" }
+  }
+}
+```
+
+Seven tools are exposed: `extract_iocs`, `enrich_indicators`, `assess_indicators`,
+`suggest_hunts`, `propose_blocks` (always a **dry run** — pushing real blocks is
+deliberately not an MCP tool), and `to_stix_bundle` / `from_stix_bundle`. The tool
+functions are plain and SDK-free (in `iocflow.mcp.tools`), so importing the
+package doesn't require the MCP SDK — only running the server does. See
+[`examples/mcp_server.py`](examples/mcp_server.py).
 
 ## Where this is going
 

@@ -56,6 +56,9 @@ stix = ["requests>=2.25"]
 # MISP interop: enrich against / poll / share back to a MISP instance. A thin
 # REST client (no pymisp), so the extra is just requests.
 misp = ["requests>=2.25"]
+# MCP server: expose the lifecycle over the Model Context Protocol. The MCP SDK
+# requires Python >=3.10 (the rest of iocflow still runs on 3.9).
+mcp = ["mcp>=1.2; python_version >= '3.10'"]
 # Layer 6: the agentic capstone — a LangGraph multi-agent team over L1–L5, with
 # m1→s1-style failover via langchain-failover and a human-in-the-loop gate.
 # LangGraph/LangChain require Python >=3.10; the rest of iocflow still runs on 3.9.
@@ -77,10 +80,12 @@ dev = [
     "langchain-core>=0.3; python_version >= '3.10'",
     "langchain-openai>=0.2; python_version >= '3.10'",
     "langchain-failover>=0.1; python_version >= '3.10'",
+    "mcp>=1.2; python_version >= '3.10'",
 ]
 
 [project.scripts]
 iocflow = "iocflow.cli:main"
+iocflow-mcp = "iocflow.mcp.server:main"
 
 [project.urls]
 Homepage = "https://github.com/vinayvobbili/iocflow"
