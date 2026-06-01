@@ -46,4 +46,18 @@ def default_sources(env: Optional[dict] = None) -> List[Source]:
 
         sources.append(FileSource(file_dir.strip()))
 
+    # MISP event source (its own [misp] extra): enabled by IOCFLOW_MISP_SOURCE
+    # when an instance URL + key are configured.
+    misp_url = env.get("IOCFLOW_MISP_URL")
+    misp_key = env.get("IOCFLOW_MISP_KEY") or env.get("IOCFLOW_MISP_API_KEY")
+    if _truthy(env.get("IOCFLOW_MISP_SOURCE", "")) and misp_url and misp_key:
+        try:
+            from iocflow.misp import MISPEventSource
+
+            tag_csv = env.get("IOCFLOW_MISP_TAGS", "")
+            tags = [t.strip() for t in tag_csv.split(",") if t.strip()] or None
+            sources.append(MISPEventSource(misp_url, misp_key, tags=tags))
+        except ImportError:  # pragma: no cover - extra not installed
+            pass
+
     return sources

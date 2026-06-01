@@ -123,4 +123,16 @@ def default_enrichers(env: Optional[dict] = None) -> List[Enricher]:
     if abusech:
         enrichers.append(AbuseChEnricher(abusech))
 
+    # MISP lives in its own optional extra; only wire it in when both the URL and
+    # a key are present (and the extra is installed), keeping enrich decoupled.
+    misp_url = env.get("IOCFLOW_MISP_URL")
+    misp_key = env.get("IOCFLOW_MISP_KEY") or env.get("IOCFLOW_MISP_API_KEY")
+    if misp_url and misp_key:
+        try:
+            from iocflow.misp import MISPEnricher
+
+            enrichers.append(MISPEnricher(misp_url, misp_key))
+        except ImportError:  # pragma: no cover - extra not installed
+            pass
+
     return enrichers

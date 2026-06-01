@@ -41,6 +41,7 @@ automatically; `185.220.101.5` is kept while private/benign IPs are dropped.
 ```bash
 pip install iocflow              # core — one dependency (tldextract)
 pip install "iocflow[mitre]"     # + a ready-made MITRE ATT&CK malware-name source
+pip install "iocflow[misp]"      # + MISP interop: enrich / ingest / share back
 ```
 
 ## What it extracts
@@ -447,6 +448,43 @@ poller = Poller(
 ```
 
 See [`examples/stix_interop.py`](examples/stix_interop.py).
+
+## MISP interop
+
+MISP is where many teams already keep their shared threat intel. iocflow connects
+to it three ways, each conforming to a seam you've already seen — so MISP is just
+another enricher, another source, and a place to publish results.
+
+```bash
+pip install "iocflow[misp]"
+```
+
+```python
+from iocflow import extract
+from iocflow.enrich import enrich
+from iocflow.misp import MISPEnricher, MISPEventSource, MISPPublisher
+
+entities = extract(report_text)
+
+# 1) Enrich: an Enricher like any other — a to_ids hit is malicious, a context
+#    hit is suspicious, no hit is unknown.
+report = enrich(entities, [MISPEnricher("https://misp.example.org", key)])
+
+# 2) Ingest: a MISP instance as a Source — poll events and drive the lifecycle.
+from iocflow.sources import Poller
+Poller([MISPEventSource("https://misp.example.org", key, tags=["tlp:white"])]).run_once()
+
+# 3) Share back: push the triage out as a MISP event. Safe by default —
+#    dry_run=True builds the event without contacting the server; org-only
+#    distribution and published=False keep it from going wider until you say so.
+MISPPublisher("https://misp.example.org", key).publish(report)
+```
+
+Verdicts shape what gets shared: an attribute is marked `to_ids` (actionable) only
+when its enrichment verdict is malicious. Configure via `IOCFLOW_MISP_URL` +
+`IOCFLOW_MISP_KEY` (and `IOCFLOW_MISP_SOURCE=true` to auto-wire the event source).
+A thin REST client — stdlib + `requests`, no `pymisp`. See
+[`examples/misp_interop.py`](examples/misp_interop.py).
 
 ## Where this is going
 

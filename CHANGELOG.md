@@ -1,6 +1,22 @@
 # Changelog
 
 ## Unreleased
+- **MISP interop** (`iocflow[misp]`). Connects iocflow to a MISP instance three
+  ways, each conforming to an existing seam: `MISPEnricher` is an `Enricher`
+  (a `to_ids` hit → malicious, a context-only hit → suspicious, no hit →
+  unknown); `MISPEventSource` is a `Source` that polls events (filtered by tag /
+  published state / recency) and folds every attribute — including those nested
+  in MISP objects, and composite types like `domain|ip` — into a `Trigger`;
+  `MISPPublisher` is a share-back sink that pushes a triage result *out* as a
+  MISP event.
+- `MISPPublisher` is safe by default like Layer 5 blocking: `dry_run=True` builds
+  the event payload without contacting the server, `distribution=0` (org-only)
+  and `published=False` keep it from going wider until you opt in. Enrichment
+  verdicts drive `to_ids` — only malicious indicators are marked actionable.
+- A thin REST client (stdlib + `requests`, no `pymisp`), so the extra is just
+  `requests`. Auto-wires from `IOCFLOW_MISP_URL` + `IOCFLOW_MISP_KEY` (the
+  enricher) and `IOCFLOW_MISP_SOURCE=true` (the event source). New
+  `examples/misp_interop.py`.
 
 ## 0.8.0 (2026-05-31)
 - **STIX 2.1 interop** (`iocflow[stix]`). `from_stix(bundle)` parses a STIX
