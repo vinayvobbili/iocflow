@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.12.0 (2026-06-01)
 - **Trust hardening.** iocflow now ships type information and is verified by a
   stronger CI gate.
   - **Typed (`py.typed`).** The package is marked typed (PEP 561), so downstream
