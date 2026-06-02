@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.13.0 (2026-06-02)
+- **Behavioral hunts are now validated and repaired.** The optional LLM hunt
+  path (`iocflow[hunt]`) no longer ships whatever the model emits. Each authored
+  behavioral hunt is checked against its dialect — CrowdStrike CQL must scope a
+  real `#event_simpleName` (from an allow-list of Falcon sensor events) and bound
+  its output; Cortex XQL must source an allowed `dataset` and `| limit`; Sigma
+  must carry the mandatory `title`/`detection`/`condition` keys. A query that
+  fails is fed back to the model **once** with the failure reason (and the
+  dialect's syntax guide) to repair it. A hunt that still doesn't validate is
+  **kept** with `validated=False` and a `validation_error` — surfaced for a human
+  to review, never silently dropped or shipped as plausible-looking garbage.
+  - New `Hunt.validated` / `Hunt.validation_error` fields (in `to_dict()`).
+    Deterministic hunts are valid by construction (`validated=True`).
+  - Dialects opt in by implementing `validate_behavioral(query) -> (ok, reason)`
+    and a `behavioral_guide` string; the loop no-ops for dialects without them.
+- **Tolerant LLM JSON parsing.** The hunt parser previously sliced first-`{` to
+  last-`}`, which dropped the brackets of a JSON *array* (collapsing a list of
+  hunts to one object) and choked on "Extra data". It now scans with
+  `raw_decode`, recovering the payload from code fences, leading/trailing prose,
+  a bare top-level array, or several top-level objects emitted back-to-back.
+
 ## 0.12.0 (2026-06-01)
 - **Trust hardening.** iocflow now ships type information and is verified by a
   stronger CI gate.
