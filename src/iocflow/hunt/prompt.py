@@ -61,3 +61,29 @@ def build_user_prompt(
         lines.append(commentary.summary)
 
     return "\n".join(lines)
+
+
+_REPAIR_SYSTEM = (
+    "You are a senior threat-hunt engineer fixing a broken hunt query. Return the "
+    "corrected query and nothing else."
+)
+
+
+def build_repair_prompt(dialect: "Dialect", title: str, query: str, error: str) -> "tuple[str, str]":
+    """Build the ``(system, user)`` prompt asking the model to fix one query.
+
+    Used by the optional validate→repair loop: a behavioral hunt that fails its
+    dialect's validation is fed back with the failure reason and the dialect's
+    syntax guide so the model can rewrite it. Returns a strict-JSON instruction
+    (``{"query": "..."}``) regardless of dialect.
+    """
+    guide = getattr(dialect, "behavioral_guide", "")
+    user = (
+        f"A {dialect.label} hunt query is INVALID. Fix it, keeping the SAME hunting intent.\n\n"
+        f"Hunt: {title}\n\n"
+        f"FAILING QUERY:\n{query}\n\n"
+        f"ERROR:\n{error}\n\n"
+        f"{guide}\n\n"
+        'Return STRICT JSON ONLY: {"query": "<the corrected query>"}. No prose.'
+    )
+    return _REPAIR_SYSTEM, user

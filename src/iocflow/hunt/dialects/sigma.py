@@ -8,7 +8,9 @@ no randomness), and ``level`` reflects the hunt's severity.
 from __future__ import annotations
 
 import hashlib
-from typing import List, Optional
+from typing import List, Optional, Tuple
+
+from iocflow.hunt.dialects._common import basic_query_checks
 
 # Indicator kind -> (logsource category, Sigma field, value prefix).
 _FIELDS = {
@@ -39,8 +41,33 @@ class SigmaDialect:
     key = "sigma"
     label = "Sigma"
 
+    behavioral_guide = (
+        "Sigma rule (YAML) behavioral hunt structure — these keys are required:\n"
+        "- title: <short name>\n"
+        "- logsource: with a category (e.g. process_creation, dns_query)\n"
+        "- detection: with one or more selections and a condition: line\n"
+        "- level: one of critical/high/medium/low/informational\n"
+        "Express the behavior in detection selections (field: value lists), not a "
+        "single literal indicator. Return the rule as plain YAML text."
+    )
+
     def supports(self, kind: str) -> bool:
         return kind in _FIELDS
+
+    def validate_behavioral(self, query: str) -> Tuple[bool, str]:
+        """Validate an LLM-authored Sigma rule's structure.
+
+        Lightweight, stdlib-only (no YAML dependency): requires the mandatory
+        Sigma keys — ``title:``, ``detection:`` and a ``condition``. Returns
+        ``(ok, reason)``.
+        """
+        basic = basic_query_checks(query)
+        if basic:
+            return basic
+        missing = [k for k in ("title:", "detection:", "condition") if k not in query]
+        if missing:
+            return False, f"missing Sigma key(s): {', '.join(missing)}"
+        return True, ""
 
     def render(self, kind: str, values: List[str], *, level: Optional[str] = None) -> str:
         category, field, prefix = _FIELDS[kind]

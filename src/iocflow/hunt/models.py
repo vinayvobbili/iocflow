@@ -27,6 +27,12 @@ class Hunt:
     rationale: str = ""  # why this hunt, in plain language
     severity: Severity = Severity.INFO
     source: str = "deterministic"  # "deterministic" | "llm"
+    # Behavioral (LLM) hunts are validated against their dialect and repaired if
+    # broken. Deterministic hunts are valid by construction. When a behavioral
+    # hunt can't be repaired it is still surfaced with ``validated=False`` and the
+    # reason — a suggestion for a human to review, never silently dropped.
+    validated: bool = True
+    validation_error: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -38,6 +44,8 @@ class Hunt:
             "rationale": self.rationale,
             "severity": self.severity.value,
             "source": self.source,
+            "validated": self.validated,
+            "validation_error": self.validation_error,
         }
 
 

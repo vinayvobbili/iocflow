@@ -298,9 +298,21 @@ plan = suggest(report, entities=entities, commentary=note)
 behavioral = [h for h in plan.hunts if h.source == "llm"]
 ```
 
+Behavioral hunts are **validated against their dialect and repaired** before you
+see them. Each authored query is checked (CQL must scope a real
+`#event_simpleName` and bound its output; XQL must source an allowed `dataset`
+and `| limit`; Sigma must carry the mandatory `title`/`detection`/`condition`
+keys); a broken query is fed back to the model once with the failure reason to
+fix. A hunt that still doesn't validate is **kept** with `validated=False` and a
+`validation_error` — surfaced for a human to review, never silently dropped or
+shipped as plausible-looking garbage. Model output is also parsed defensively
+(code fences, trailing prose, and multiple top-level objects are all tolerated).
+
 The LLM is strictly additive: with no model, or on any model error, you still
 get the full deterministic plan — `suggest()` never raises. Add a query language
-by implementing the `Dialect` protocol (`key`, `label`, `supports`, `render`).
+by implementing the `Dialect` protocol (`key`, `label`, `supports`, `render`,
+and optionally `validate_behavioral` + `behavioral_guide` to opt into the
+validate→repair loop).
 
 ## Layer 5 — response / blocking
 

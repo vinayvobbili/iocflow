@@ -298,6 +298,93 @@ def test_plan_for_dialect_and_summary():
     assert "hunts across" in plan.summary()
 
 
+# ---------------------- robust JSON parsing -----------------------
+
+def _llm_hunt(dialect, query, title="t"):
+    return {"title": title, "dialect": dialect, "query": query}
+
+
+def test_llm_parses_bare_array_without_hunts_wrapper():
+    # Model returns a top-level array instead of {"hunts": [...]}.
+    payload = json.dumps([_llm_hunt("sigma", "title: t\ndetection:\n  condition: x")])
+    plan = suggest(_report(malicious=[("ip", "1.2.3.4")]), model=FakeModel(payload))
+    assert [h for h in plan.hunts if h.source == "llm"]
+
+
+def test_llm_parses_multiple_top_level_objects():
+    # Newline-separated objects (the classic "Extra data" failure of json.loads).
+    a = json.dumps(_llm_hunt("sigma", "title: a\ndetection:\n  condition: x", "a"))
+    b = json.dumps(_llm_hunt("cortex", "dataset = xdr_data\n| limit 100", "b"))
+    plan = suggest(_report(malicious=[("ip", "1.2.3.4")]), model=FakeModel(a + "\n" + b))
+    titles = {h.title for h in plan.hunts if h.source == "llm"}
+    assert {"a", "b"} <= titles
+
+
+def test_llm_tolerates_trailing_prose_after_json():
+    payload = json.dumps({"hunts": [_llm_hunt("cortex", "dataset = xdr_data\n| limit 100")]})
+    plan = suggest(_report(malicious=[("ip", "1.2.3.4")]), model=FakeModel(payload + "\n\nHope this helps!"))
+    assert [h for h in plan.hunts if h.source == "llm"]
+
+
+# ----------------- behavioral validate / repair -------------------
+
+def test_dialect_behavioral_validators():
+    cs, cx, sg = CrowdStrikeDialect(), CortexDialect(), SigmaDialect()
+    assert cs.validate_behavioral("#event_simpleName=ProcessRollup2 CommandLine=/x/i | head(100)")[0]
+    assert not cs.validate_behavioral("#event_simpleName=Bogus | head(100)")[0]  # bad event
+    assert not cs.validate_behavioral("ImageFileName=/x/i")[0]  # no scope / no bound
+    assert cx.validate_behavioral("dataset = xdr_data | filter event_type = ENUM.PROCESS | limit 100")[0]
+    assert not cx.validate_behavioral("dataset = secret_db | limit 100")[0]  # bad dataset
+    assert not cx.validate_behavioral("dataset = xdr_data | filter x")[0]  # unbounded
+    assert sg.validate_behavioral("title: t\nlogsource:\ndetection:\n  condition: sel")[0]
+    assert not sg.validate_behavioral("title: t\nlogsource: foo")[0]  # no detection/condition
+
+
+def test_valid_llm_hunt_is_marked_validated():
+    payload = json.dumps({"hunts": [
+        {"title": "ok", "dialect": "cortex",
+         "query": "dataset = xdr_data\n| filter event_type = ENUM.PROCESS\n| limit 100"}]})
+    plan = suggest(_report(malicious=[("ip", "1.2.3.4")]), model=FakeModel(payload))
+    h = [h for h in plan.hunts if h.source == "llm"][0]
+    assert h.validated and h.validation_error == ""
+
+
+def test_unrepairable_hunt_is_kept_and_flagged():
+    # FakeModel echoes the same payload on repair (no {"query": ...}), so repair
+    # can't fix it; the hunt is surfaced anyway with validated=False.
+    payload = json.dumps({"hunts": [{"title": "bad", "dialect": "cortex", "query": "garbage"}]})
+    plan = suggest(_report(malicious=[("ip", "1.2.3.4")]), model=FakeModel(payload))
+    h = [h for h in plan.hunts if h.source == "llm"][0]
+    assert not h.validated
+    assert h.validation_error
+    assert h.to_dict()["validated"] is False
+
+
+class _RepairModel:
+    """Returns a broken hunt first, then a corrected query on the repair call."""
+
+    name = "fake:repair"
+
+    def __init__(self, first, repaired):
+        self._first, self._repaired = first, repaired
+        self.calls = 0
+
+    def complete(self, system, user, *, json=False):
+        self.calls += 1
+        return self._first if self.calls == 1 else self._repaired
+
+
+def test_repair_loop_fixes_invalid_query():
+    broken = json.dumps({"hunts": [{"title": "fix me", "dialect": "cortex", "query": "dataset = xdr_data"}]})
+    fixed = json.dumps({"query": "dataset = xdr_data\n| filter event_type = ENUM.PROCESS\n| limit 100"})
+    model = _RepairModel(broken, fixed)
+    plan = suggest(_report(malicious=[("ip", "1.2.3.4")]), model=model)
+    h = [h for h in plan.hunts if h.source == "llm"][0]
+    assert h.validated
+    assert "| limit 100" in h.query
+    assert model.calls == 2  # one generate + one repair
+
+
 # ------------------------- import isolation -----------------------
 
 def test_importing_hunt_does_not_eagerly_load_ai_or_llm():
