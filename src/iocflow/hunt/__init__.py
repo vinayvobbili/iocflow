@@ -27,6 +27,13 @@ deterministic plan intact. ``suggest`` never raises.
 Needs the extra: ``pip install "iocflow[hunt]"`` (only the LLM path uses it; the
 deterministic renderers are stdlib-only).
 """
+from iocflow.hunt.coverage import assess_coverage
+from iocflow.hunt.coverage_models import (
+    CoverageItem,
+    CoverageReport,
+    CoverageRule,
+    CoverageStatus,
+)
 from iocflow.hunt.models import Hunt, HuntPlan
 from iocflow.hunt.protocol import Dialect
 from iocflow.hunt.registry import DEFAULT_DIALECTS, all_dialects, get_dialect
@@ -35,9 +42,14 @@ from iocflow.severity import Severity
 
 __all__ = [
     "suggest",
+    "assess_coverage",
     "default_model",
     "Hunt",
     "HuntPlan",
+    "CoverageReport",
+    "CoverageItem",
+    "CoverageRule",
+    "CoverageStatus",
     "Severity",
     "Dialect",
     "get_dialect",

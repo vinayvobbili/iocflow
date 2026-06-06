@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+## 0.14.0 (2026-06-06)
+- **ATT&CK coverage-gap analysis — "can we already detect this?".** New
+  `iocflow.hunt.assess_coverage(entities, catalog)`, the companion to
+  `suggest()`. `suggest` says *how to hunt*; `coverage` says *where you're
+  blind*. Given the ATT&CK techniques in a CTI report and the detection rules you
+  already run (a list of `{name, source, techniques}` dicts — the same loose
+  shape detflow's overlap input uses), it returns a per-technique verdict:
+  `covered`, `partial`, or `gap`.
+  - **Deterministic core, no network, no keys.** Indexes the catalog by technique
+    and classifies each report technique. Lenient by default — a sub-technique is
+    covered by a rule on its parent (`T1059.001` satisfied by a `T1059` rule);
+    `strict=True` requires exact matches. Pass `techniques=[...]` to skip
+    extraction. Robust to garbage catalog rows (non-dicts, missing fields).
+  - **Optional LLM refinement.** With a model configured (the same
+    `IOCFLOW_LLM_*` env as Layers 3/4), a single pass can downgrade
+    `covered → partial` when a tagged rule looks unlikely to catch *this* CTI's
+    procedure, with a one-line rationale. Strictly additive: any model/parse
+    failure leaves the deterministic verdicts intact and records a non-fatal
+    `report.error`. `assess_coverage()` never raises and never consults the model
+    when there's nothing covered to refine.
+  - New result types `CoverageReport` / `CoverageItem` / `CoverageRule` /
+    `CoverageStatus` (re-exported from `iocflow.hunt`), with `.gaps`, `.covered`,
+    `.partial`, `.summary()`, and `.to_dict()`.
+  - New CLI: `iocflow coverage "…report…" -c catalog.json [--strict] [--json]`.
+
 ## 0.13.0 (2026-06-02)
 - **Behavioral hunts are now validated and repaired.** The optional LLM hunt
   path (`iocflow[hunt]`) no longer ships whatever the model emits. Each authored

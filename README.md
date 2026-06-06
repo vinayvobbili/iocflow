@@ -119,6 +119,7 @@ echo "report text…" | iocflow --json                          # stdin + JSON
 iocflow enrich      "c2 at 185.220.101.5"      # L1→L2 (uses env API keys)
 iocflow comment     "…report…"                 # +L3 AI assessment
 iocflow hunt --dialect sigma "…report…"        # +L4 hunt queries
+iocflow coverage    "…report…" -c catalog.json # L4 — covered/partial/gap vs your rules
 iocflow block       "…report…"                 # L5 — DRY RUN; add --commit to push
 iocflow investigate "…report…"                 # L6 agentic capstone (--gate auto for dev)
 iocflow poll                                   # ingestion: run env-configured sources once
@@ -313,6 +314,51 @@ get the full deterministic plan — `suggest()` never raises. Add a query langua
 by implementing the `Dialect` protocol (`key`, `label`, `supports`, `render`,
 and optionally `validate_behavioral` + `behavioral_guide` to opt into the
 validate→repair loop).
+
+### Coverage gaps — "can we already detect this?"
+
+`suggest()` says *how to hunt*; its companion `assess_coverage()` says *where
+you're blind*. Given the ATT&CK techniques in a CTI report and the detection
+rules you already run, it returns a per-technique verdict — `covered`, `partial`,
+or `gap`:
+
+```python
+from iocflow import extract
+from iocflow.hunt import assess_coverage
+
+entities = extract(cti_report_text)
+
+# Bring your own rule inventory — a list of plain dicts, exported from whatever
+# platforms you run. Each rule declares the ATT&CK techniques it covers.
+catalog = [
+    {"name": "Encoded PowerShell", "source": "crowdstrike", "techniques": ["T1059.001"]},
+    {"name": "WMI Process Create",  "source": "sigma",       "techniques": ["T1047"]},
+]
+
+report = assess_coverage(entities, catalog)   # deterministic, offline, never raises
+print(report.summary())                       # "1/3 techniques covered, 2 gaps"
+for gap in report.gaps:
+    print("BLIND:", gap.technique)
+```
+
+The deterministic core needs no network and no keys: it indexes the catalog by
+technique and classifies each of the report's techniques as `covered` or `gap`.
+By default a sub-technique is covered by a rule on its parent (`T1059.001`
+satisfied by a `T1059` rule); pass `strict=True` to require exact matches. Pass
+`techniques=[...]` to skip extraction when you already have the IDs.
+
+With a model configured (the same `IOCFLOW_LLM_*` env), an optional pass
+sharpens the verdict — a rule *tagged* for a technique doesn't always catch every
+procedure under it, so the model can downgrade `covered → partial` with a
+one-line rationale. Any model error leaves the deterministic verdicts intact;
+`assess_coverage()` never raises. Together, `coverage` (where you're blind) and
+`suggest` (how to look) are the "can we detect this?" answer for incoming CTI:
+
+```python
+coverage = assess_coverage(entities, catalog)
+hunts    = suggest(report, entities=entities)
+gap_techniques = {g.technique for g in coverage.gaps}   # drive manual hunting at the holes
+```
 
 ## Layer 5 — response / blocking
 

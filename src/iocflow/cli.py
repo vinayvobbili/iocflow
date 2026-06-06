@@ -6,6 +6,7 @@ Subcommands mirror the library layers:
     iocflow enrich    "…text…"     # L1→L2
     iocflow comment   "…text…"     # +L3 AI assessment
     iocflow hunt      "…text…"     # +L4 suggested hunts
+    iocflow coverage  "…text…" -c catalog.json   # L4 "can we already detect this?"
     iocflow block     "…text…"     # L5  (DRY RUN unless --commit)
     iocflow investigate "…text…"   # L6  agentic capstone
     iocflow poll                   # ingestion: run env-configured sources once
@@ -25,7 +26,7 @@ import sys
 from iocflow.extract import extract
 
 _LAYER_SUBCOMMANDS = (
-    "extract", "enrich", "comment", "hunt", "block", "investigate",
+    "extract", "enrich", "comment", "hunt", "coverage", "block", "investigate",
     "poll", "stix", "version",
 )
 
@@ -128,6 +129,33 @@ def _cmd_hunt(args) -> int:
         for h in plan.hunts:
             print(f"\n# [{h.source}/{h.severity.value}] {h.rationale}")
             print(h.query)
+    return 0
+
+
+def _cmd_coverage(args) -> int:
+    try:
+        from iocflow.hunt import assess_coverage
+    except ImportError as exc:
+        return _need("hunt", exc)
+    catalog: list = []
+    try:
+        with open(args.catalog, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        catalog = data if isinstance(data, list) else data.get("rules", [])
+    except Exception as exc:  # noqa: BLE001 — a bad catalog -> everything is a gap, not a crash
+        sys.stderr.write(f"iocflow: could not read catalog {args.catalog!r}: {exc}\n")
+    entities = extract(_read_text(args))
+    report = assess_coverage(entities, catalog, strict=args.strict)
+    if args.json:
+        _emit_json(report.to_dict())
+    else:
+        print(report.summary())
+        for item in report.items:
+            rules = ", ".join(r.name for r in item.rules)
+            tail = f" <- {rules}" if rules else ""
+            if item.rationale:
+                tail += f"  ({item.rationale})"
+            print(f"  {item.status.value:8} {item.technique}{tail}")
     return 0
 
 
@@ -258,6 +286,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dialect", action="append",
                    help="Hunt dialect(s): crowdstrike, cortex, sigma (repeatable).")
     p.set_defaults(func=_cmd_hunt)
+
+    p = sub.add_parser("coverage", help="Assess ATT&CK coverage vs a rule catalog (L4).")
+    _add_text_arg(p)
+    p.add_argument("--catalog", "-c", required=True,
+                   help="JSON rule inventory: a list of {name, source, techniques} objects.")
+    p.add_argument("--strict", action="store_true",
+                   help="Require exact technique-ID matches (no sub->parent folding).")
+    p.set_defaults(func=_cmd_coverage)
 
     p = sub.add_parser("block", help="Block malicious indicators (L5; DRY RUN by default).")
     _add_text_arg(p)
