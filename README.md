@@ -13,6 +13,8 @@ write by hand: a Public Suffix List domain validator, benign-domain/IP
 allowlists, hash de-duplication across MD5/SHA1/SHA256, and re-fanging of
 defanged IOCs.
 
+> **Background:** [iocflow: Turning a Production AI SOC into a Shippable OSS Library](https://vinayvobbili.github.io/posts/iocflow-agentic-ioc-lifecycle/) — the production AI SOC this library was distilled from, and the design rationale behind it.
+
 ```python
 from iocflow import extract
 
